@@ -82,8 +82,8 @@ def TAAmbk(input, ignore=False, aatype=1, preaa=1, sharp=None, postaa=None, mtyp
 	
 	# p1~p6 preset groups	
 	pindex = aatype + 3
-	#				 aatype =		-3		-2		-1		0	   1	  2		 3		 4		 5		 6
-	if p1	is None: p1		=	[	48,		48,		48,		0,	   10,	 0.5, 	 3,		48,		48,		48][pindex]
+	#				 aatype =	-3	    -2		-1		0	   1	  2      3		 4		 5		 6
+	if p1	is None: p1		=	[	48,	    48,		48,		0,	   10,	 0.5, 	 3,		48,		48,		48][pindex]
 	if p2	is None: p2		=	[	 3,	   0.5,		10,		0,	   20,	 0.2, 	 1,		 1,		 0,		rp][pindex]
 	if p3	is None: p3		=	[	 1,	   0.2,		20,		0,	   20,	  20, 	 2,		 3,		 0,		 0][pindex]
 	if p4	is None: p4		=	[	 2,	    20,		20,		0,	   24,	   3, 	 0,		 2,		 0,		 0][pindex]
