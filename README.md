@@ -1,6 +1,11 @@
 # vsTAAmbk 0.2
 A ported AA-script from Avisynth
 
+Usage：
+import vsTAAmbk as taa
+...
+aa = taa.TAAmbk(src)
+...
 For more detials NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
 Requirements:
