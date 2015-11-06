@@ -1,4 +1,4 @@
-# vsTAAmbk 0.3
+# vsTAAmbk 0.3.1
 A ported AA-script from Avisynth
 
 
