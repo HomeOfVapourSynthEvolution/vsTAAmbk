@@ -1,5 +1,5 @@
 ##==========================================================
-## 2015.10.24			vsTAAmbk 0.3					
+## 2015.11.6			vsTAAmbk 0.3.1					
 ##			Port from TAAmbk 0.7.0 by Evalyn
 ##			Email: pov@mahou-shoujo.moe			
 ##			Thanks (author)kewenyu for help				
@@ -324,7 +324,7 @@ def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None
 			if aatype == -2:
 				if eedi3sclip == False:
 					
-					aa_clip = core.fmtc.resample(core.eedi3.eedi3(preaaC, dh=True, field=1, alpha=p2, beta=p3, gamma=p4, nrad=int(p5), mdis=int(p6)), w=w, h=uph4, sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
+					aa_clip = core.fmtc.resample(core.eedi3.eedi3(Depth(preaaC,8), dh=True, field=1, alpha=p2, beta=p3, gamma=p4, nrad=int(p5), mdis=int(p6)), w=w, h=uph4, sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
 					aa_clip = Depth(aa_clip,depth=8)
 					aa_clip = core.eedi3.eedi3(core.std.Transpose(aa_clip), dh=True, field=1, alpha=p2, beta=p3, gamma=p4, nrad=int(p5), mdis=int(p6))
 					aa_clip = core.sangnom.SangNomMod(Depth(core.fmtc.resample(aa_clip, w=uph4, h=upw4, sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36"),depth=8),aa=int(p1))
@@ -332,7 +332,7 @@ def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None
 					aa_clip = core.fmtc.resample(aa_clip,w=w,h=h,kernel=["spline36","spline36"])
 				else:
 					# EEDI3 need w * h
-					aa_clip = core.fmtc.resample(core.eedi3.eedi3(preaaC, dh=True, field=1, alpha=p2, beta=p3, gamma=p4, nrad=int(p5), mdis=int(p6), sclip=sclip), w=w, h=uph4, sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
+					aa_clip = core.fmtc.resample(core.eedi3.eedi3(Depth(preaaC,8), dh=True, field=1, alpha=p2, beta=p3, gamma=p4, nrad=int(p5), mdis=int(p6), sclip=sclip), w=w, h=uph4, sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
 					# output w * uph4
 					aa_clip = Depth(aa_clip,depth=8)
 					# EEDI3 need uph4 * w
@@ -355,13 +355,13 @@ def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None
 					else:
 						if aatype == 2:
 							if eedi3sclip == False:
-								aa_clip = core.fmtc.resample(core.eedi3.eedi3(preaaC,dh=True, field=1, alpha=p1, beta=p2, gamma=p3, nrad=int(p4), mdis=int(p5)),w=w,h=h,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
+								aa_clip = core.fmtc.resample(core.eedi3.eedi3(Depth(preaaC,8),dh=True, field=1, alpha=p1, beta=p2, gamma=p3, nrad=int(p4), mdis=int(p5)),w=w,h=h,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
 								aa_clip = Depth(core.std.Transpose(aa_clip),depth=8)
 								aa_clip = core.fmtc.resample(core.eedi3.eedi3(aa_clip,dh=True, field=1, alpha=p1, beta=p2, gamma=p3, nrad=int(p4), mdis=int(p5)),w=h,h=w,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
 								aa_clip = core.std.Transpose(aa_clip)
 							else:
 								#EEDI3 need w * h
-								aa_clip = core.fmtc.resample(core.eedi3.eedi3(preaaC,dh=True, field=1, alpha=p1, beta=p2, gamma=p3, nrad=int(p4), mdis=int(p5), sclip=sclip),w=w,h=h,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
+								aa_clip = core.fmtc.resample(core.eedi3.eedi3(Depth(preaaC,8),dh=True, field=1, alpha=p1, beta=p2, gamma=p3, nrad=int(p4), mdis=int(p5), sclip=sclip),w=w,h=h,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36")
 								#output w * h
 								aa_clip = Depth(core.std.Transpose(aa_clip),depth=8)
 								#EEDI3 need h * w
@@ -412,7 +412,10 @@ def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None
 												aa_clip = core.nnedi3.nnedi3(Depth(core.std.Transpose(aa_clip),8),dh=True, field=1, nsize=1, nns=3, qual=2)
 												aa_clip = core.std.Transpose(core.fmtc.resample(aa_clip,w=h,h=w,sx=0,sy=[-0.5,-0.5*(1<<preaaC.format.subsampling_h)],kernel="spline36"))
 										else:
-											aa_clip = Depth(preaaC,16)
+											if cycle == 0:
+												aa_clip = Depth(preaaC,16)
+											else:
+												aa_clip = preaaC
 		
 		return aa_clip if cycle == 0 else TAAmbk_mainpass(aa_clip, aatype=aatype ,cycle=cycle-1, p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, p6=p6, w=w, h=h, uph4=uph4, upw4=upw4, eedi3sclip=eedi3sclip)
 	
