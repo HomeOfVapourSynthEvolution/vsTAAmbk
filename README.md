@@ -1,11 +1,13 @@
-# vsTAAmbk 0.4.1
+# vsTAAmbk 0.6.0
 A ported AA-script from Avisynth
 
 
 ##Usage：
 
-import vsTAAmbk as taa
+### New Experimental
+aa = taa.TAAmbkX(src)
 
+### Old
 aa = taa.TAAmbk(src)
 
 
@@ -34,9 +36,3 @@ HAvsFunc r18 or newer (and its requirements)
 ##TIPS:
 
 Only YUV colorfmaily is supported! And input bitdepth must be 8 or 16 INTEGER !
-
-Output is always 16bit INTEGER.
-
-"mtype" and "mtype2" = 5 are DISABLED.
-
-add "aatype 7" using "pure" sangnom.
