@@ -1,5 +1,5 @@
 ##==========================================================
-## 2016.02.09			vsTAAmbk 0.6.0					
+## 2016.02.09			vsTAAmbk 0.6.1					
 ##			Ported from TAAmbk 0.7.0 by Evalyn
 ##          Maintained by Evalyn pov@mahou-shoujo.moe		
 ##			              kewenyu 1059902659@qq.com		
