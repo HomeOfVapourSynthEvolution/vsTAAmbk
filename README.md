@@ -56,3 +56,4 @@ For more details please visit our threads in NMM-HD Forum.
     Will use LimitFilter to limit the loss
 * *showmask* - show the mask  
     0 - Normal output ; 1 - Mask only ; 2 - Stack mask and clip ; 3 - Interleave mask and clip ; -1 - Text mask only
+* *other paraments* - Will be collected into a dict for particular aatype
