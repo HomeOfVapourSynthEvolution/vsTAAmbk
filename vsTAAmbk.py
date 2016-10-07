@@ -1,3 +1,36 @@
+##==========================================================
+## 2016.02.09			vsTAAmbk 0.6.0					
+##			Ported from TAAmbk 0.7.0 by Evalyn
+##          Maintained by Evalyn pov@mahou-shoujo.moe		
+##			              kewenyu 1059902659@qq.com		
+##==========================================================
+##			Requirements:								
+##						EEDI2							
+##						nnedi3							
+##						RemoveGrain/Repair				
+##						fmtconv							
+##						GenericFilters					
+##						MSmoosh							
+##						MVTools							
+##						TemporalSoften					
+##						sangnom							
+##						HAvsFunc(and its requirements)	
+##			VapourSynth R28 or newer
+##
+##==========================================================
+##==========================================================
+##														
+##	#### Only YUV colorfmaily is supported ! 	
+##	#### And input bitdepth must be 8 or 16 INT !			
+##		 												
+##==========================================================	 												
+
+
+
+
+
+
+
 import vapoursynth as vs
 import havsfunc as haf
 import mvsfunc as mvf
