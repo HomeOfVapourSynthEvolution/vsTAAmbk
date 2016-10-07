@@ -23,14 +23,8 @@
 ##	#### Only YUV colorfmaily is supported ! 	
 ##	#### And input bitdepth must be 8 or 16 INT !			
 ##		 												
-##==========================================================	 												
-
-
-
-
-
-
-
+##==========================================================	 	
+											
 import vapoursynth as vs
 import havsfunc as haf
 import mvsfunc as mvf
@@ -71,7 +65,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         src = input
     else:
         if src.format.id != ID or src.width != W or src.height != H:
-            raise RuntimeError(FUNCNAME + ': src format and input mismatch !')
+            raise RuntimeError(FUNCNAME + ': format of src and input mismatch !')
     
     
     # Input Check
@@ -245,6 +239,14 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             aaed = core.sangnom.SangNom(aaed, aa=self.aa)
             aaed = self.aaResizer(aaed, W, H, 0)
             return aaed
+    
+    
+    class aaNnedi3UpscaleSangNom(aaNnedi3SangNom):
+        def __init__(self, args):
+            super(aaNnedi3UpscaleSangNom, self).__init__(args)
+            self.nsize = self.aaParaInit(args, 'nsize', 3)
+            self.nns = self.aaParaInit(args, 'nns', 1)
+            self.qual = self.aaParaInit(args, 'qual', 2)
 
 
     class aaEedi3(aaParent):
@@ -377,6 +379,27 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             aaed = core.sangnom.SangNom(aaed, aa=self.aa)
             aaed = self.aaResizer(core.std.Transpose(aaed), W, H, 0)
             return aaed
+            
+            
+    # An AA method from VCB-S
+    class aaEedi2PointSangNom(aaEedi2SangNom):
+        def __init__(self, args):
+            super(aaEedi2PointSangNom, self).__init__()
+        
+        def AA(self, clip):
+            aaed = core.eedi2.EEDI2(clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
+            aaed = self.aaResizer(aaed, W, H*2, -0.5)
+            aaed = core.std.Transpose(aaed)
+            aaed = core.resize.Point(H*2, W*2)
+            aaed = core.sangnom.SangNom(aaed, aa=self.aa)
+            aaed = core.std.Transpose(aaed)
+            aaed = core.sangnom.SangNom(aaed, aa=self.aa)
+            aaed = core.std.Transpose(aaed)
+            aaed = self.aaResizer(aaed, H, W, -0.5)
+            aaed = core.std.Transpose(aaed)
+            return aaed
+            
+            
 
 ##################### End of Main AAType ########################
 
@@ -529,6 +552,9 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     elif aatype == 3 or aatype == "Nnedi3":
         aaObj = aaNnedi3(pn)
         
+    elif aatype == 4 or aatype == "Nnedi3UpscaleSangNom"
+        aaObj = aaNnedi3UpscaleSangNom(pn)
+        
     elif aatype == 5 or aatype == "Spline64NrSangNom":
         aaObj = aaSpline64NrSangNom(pn)
         
@@ -544,7 +570,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     elif aatype == -2 or aatype == "Eedi3SangNom":
         aaObj = aaEedi3SangNom(pn)
         
-    elif aatype == -3 or aatype == -4 or aatype == "Nnedi3SangNom":
+    elif aatype == -3 or aatype == "Nnedi3SangNom":
         aaObj = aaNnedi3SangNom(pn)
         
     else:
