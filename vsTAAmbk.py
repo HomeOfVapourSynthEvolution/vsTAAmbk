@@ -1,8 +1,8 @@
 ##==========================================================
 ## 2016.02.09			vsTAAmbk 0.6.1					
 ##			Ported from TAAmbk 0.7.0 by Evalyn
-##          Maintained by Evalyn pov@mahou-shoujo.moe		
-##			              kewenyu 1059902659@qq.com		
+##			Maintained by Evalyn pov@mahou-shoujo.moe		
+##							kewenyu 1059902659@qq.com		
 ##==========================================================
 ##			Requirements:								
 ##						EEDI2							
@@ -633,6 +633,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 aaMask = core.std.Expr(aaMask, "x 257 *", vs.GRAY16)
                 
             mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0,1,2], first_plane=True)
+        else:
+            mergedClip = stabedClip
     
     # Build Text Mask if input is not GRAY
     if IS_GRAY == False and txtprt is not None:
