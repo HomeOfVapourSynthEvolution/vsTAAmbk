@@ -24,7 +24,13 @@
 ##	#### And input bitdepth must be 8 or 16 INT !			
 ##		 												
 ##==========================================================	 	
-											
+
+
+
+
+
+
+
 import vapoursynth as vs
 import havsfunc as haf
 import mvsfunc as mvf
