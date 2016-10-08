@@ -552,7 +552,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     elif aatype == 3 or aatype == "Nnedi3":
         aaObj = aaNnedi3(pn)
         
-    elif aatype == 4 or aatype == "Nnedi3UpscaleSangNom"
+    elif aatype == 4 or aatype == "Nnedi3UpscaleSangNom":
         aaObj = aaNnedi3UpscaleSangNom(pn)
         
     elif aatype == 5 or aatype == "Spline64NrSangNom":
@@ -574,7 +574,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         aaObj = aaNnedi3SangNom(pn)
         
     else:
-        pass
+        raise ValueError(FUNCNAME + ': Unknown aatype !')
         
     # Get Anti-Aliasing Clip
     if aatype != 0:
