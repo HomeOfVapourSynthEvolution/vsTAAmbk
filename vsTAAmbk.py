@@ -88,17 +88,17 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
 ############### Internal Functions ###################
     def Preaa(input, mode):
-         nn = None if mode == 2 else core.nnedi3.nnedi3(input, field=3)
-         nnt = None if mode == 1 else core.nnedi3.nnedi3(core.std.Transpose(input), field=3).std.Transpose()
-         clph = None if mode == 2 else core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0), core.std.SelectEvery(nn, cycle=2, offsets=1))
-         clpv = None if mode == 1 else core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0), core.std.SelectEvery(nnt, cycle=2, offsets=1))
-         clp = core.std.Merge(clph, clpv) if mode == -1 else None
-         if mode == 1:
-             return clph
-         elif mode == 2:
-             return clpv
-         else:
-             return clp
+        nn = None if mode == 2 else core.nnedi3.nnedi3(input, field=3)
+        nnt = None if mode == 1 else core.nnedi3.nnedi3(core.std.Transpose(input), field=3).std.Transpose()
+        clph = None if mode == 2 else core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0), core.std.SelectEvery(nn, cycle=2, offsets=1))
+        clpv = None if mode == 1 else core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0), core.std.SelectEvery(nnt, cycle=2, offsets=1))
+        clp = core.std.Merge(clph, clpv) if mode == -1 else None
+        if mode == 1:
+            return clph
+        elif mode == 2:
+            return clpv
+        else:
+            return clp
     
     
     def Lineplay(input, thin, dark):
@@ -164,7 +164,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         return final
     
     
-    def Sharp(aaclip, aasrc, aasharp):
+    def Sharp(aaclip, aasrc):
         if sharp >= 1:
             sharped = haf.LSFmod(aaclip, strength=int(ABS_SHARP), defaults="old", source=aasrc)
         elif sharp > 0:
@@ -502,7 +502,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                     tmask = core.std.Expr(eemask, texpr)
                     expr = "x " + str(self.mlthresh[i]) + " < z y ?"
                     mask = core.std.Expr([clip,tmask,mask], expr) 
-                mask = core.std.Expr(mask, "x " + str(self.multi) + " *", outdepth)
+                mask = core.std.Expr(mask, "x " + str(self.multi) + " *", self.outdepth)
             
             else:
                 expr = "x " + str(self.binarize) + " < 0 255 " + str(self.multi) + " * ?"
@@ -600,7 +600,11 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         aaedClip = mvf.Depth(aaedClip, 16)
         
     # Sharp it
-    sharpedClip = aaedClip if sharp == 0 else Sharp(aaedClip, src, sharp)
+    sharpedClip = aaedClip if sharp == 0 else Sharp(aaedClip, src)
+    
+    # PostAA
+    if postaa is True:
+        sharpedClip = Soothe(sharpedClip, src)
     
     # Repair it
     repairedClip = sharpedClip if repair == 0 else core.rgvs.Repair(src, sharpedClip, repair)
@@ -640,7 +644,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     if IS_GRAY == False and txtprt is not None:
         txtmObj = mText(txtprt)
         txtMask = txtmObj.getMask(input8)
-        txtprtClip = core.std.MaskedMerge(mergedClip, src, txtMask, planes[0,1,2], first_plane=True)
+        txtprtClip = core.std.MaskedMerge(mergedClip, src, txtMask, planes=[0,1,2], first_plane=True)
     else:
         txtprtClip = mergedClip
     
@@ -682,7 +686,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
 
 
 
-
+'''
 # Old TAAmbk. May be deleted soon. 
 def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None, mthr=32, src=None,
 			 cycle=0, eedi3sclip=None, predown=False, repair=None, stabilize=0, p1=None, p2=None, 
@@ -1352,6 +1356,6 @@ def TAAmbk(input, aatype=1, lsb=False, preaa=0, sharp=0, postaa=None, mtype=None
 		else:
 			return core.rgvs.Repair(Depth(input,depth=16), aamerge, mode=abs(repair))
 
-
+'''
 
 
