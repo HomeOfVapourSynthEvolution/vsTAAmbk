@@ -57,7 +57,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     IS_GRAY = True if input.format.num_planes == 1 else False
     ABS_SHARP = abs(sharp)
     STR = strength    # Strength of predown
-    PROCE_DEPTH = BPS if down8 == False else 8    # Process bitdepth
+    PROCE_DEPTH = BPS if down8 is False else 8    # Process bitdepth
     
     
     # Associated Default Values
@@ -539,7 +539,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
 ################### Begin of Main Workflow ################
 
     input8 = input if BPS == 8 else mvf.Depth(input, 8)
-    if BPS == 16 and down8 == True:
+    if BPS == 16 and down8 is True:
         input = input8
     
     # Pre-Antialiasing
@@ -596,7 +596,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         aaedClip = lineplayClip
         
     # Back 16 if BPS is 16 and down8
-    if BPS == 16 and down8 == True:
+    if BPS == 16 and down8 is True:
         aaedClip = mvf.Depth(aaedClip, 16)
         
     # Sharp it
@@ -633,7 +633,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 pass
             
             # Let it back to 16 if down8
-            if BPS == 16 and down8 == True:
+            if BPS == 16 and down8 is True:
                 aaMask = core.std.Expr(aaMask, "x 257 *", vs.GRAY16)
                 
             mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0,1,2], first_plane=True)
@@ -641,7 +641,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             mergedClip = stabedClip
     
     # Build Text Mask if input is not GRAY
-    if IS_GRAY == False and txtprt is not None:
+    if IS_GRAY is False and txtprt is not None:
         txtmObj = mText(txtprt)
         txtMask = txtmObj.getMask(input8)
         txtprtClip = core.std.MaskedMerge(mergedClip, src, txtMask, planes=[0,1,2], first_plane=True)
@@ -650,7 +650,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
     
     # Clamp loss if input is 16bit and down8 is set
-    if BPS == 16 and down8 == True:
+    if BPS == 16 and down8 is True:
         outClip = mvf.LimitFilter(src, txtprtClip, thr=1.0, elast=2.0)
     else:
         outClip = txtprtClip
