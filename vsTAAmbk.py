@@ -258,10 +258,10 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             self.mdis = self.aaParaInit(args, 'mdis', 30)
             self.eedi3m = eedi3m
             try:
-                self.eedi3 = core.eedi3_092.eedi3    # Check whether eedi3_092 avaliable
+                self.eedi3 = core.eedi3_092.eedi3    # Check whether eedi3_092 is available
             except AttributeError:
                 self.eedi3 = core.eedi3.eedi3
-                self.eedi3m = False    # Disable eedi3m if eedi3_092 is not avaliabe
+                self.eedi3m = False    # Disable eedi3m if eedi3_092 is not availabe
     
         def down8(self, clip):
             if BPS == 16 and PROCE_DEPTH != 8:
@@ -549,6 +549,55 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 mask = self.mInpand(mask, self.mpand[1])
 
             return core.rgvs.RemoveGrain(mask, 20)
+
+    class mPrewitt(mParent):
+        def __init__(self, mthr, mlthresh, mpand):
+            super(mPrewitt, self).__init__()
+            self.mfactor = self.mParaInit(mthr, 62)
+            self.mlthresh = mlthresh
+            self.mpand = mpand
+
+        def mCheckList(self, list1, list2):
+            if len(list1) != (len(list2) - 1):
+                raise ValueError(FUNCNAME + ': num of mthr and mlthresh mismatch !')
+
+        def mInflate(self, clip, time):
+            for i in range(time):
+                clip = core.std.Inflate(clip)
+            return clip
+
+        def mDeflate(self, clip, time):
+            for i in range(time):
+                clip = core.std.Deflate(clip)
+            return clip
+
+        def getMask(self, clip):
+            clip = self.mGetGray(clip)
+            emask_1 = core.std.Convolution(clip, [1, 1, 0, 1, 0, -1, 0, -1, -1], divisor=1, saturate=False)
+            emask_2 = core.std.Convolution(clip, [1, 1, 1, 0, 0, 0, -1, -1, -1], divisor=1, saturate=False)
+            emask_3 = core.std.Convolution(clip, [1, 0, -1, 1, 0, -1, 1, 0, -1], divisor=1, saturate=False)
+            emask_4 = core.std.Convolution(clip, [0, -1, -1, 1, 0, -1, 1, 1, 0], divisor=1, saturate=False)
+            expr = "x y max z max a max"
+            emask = core.std.Expr([emask_1, emask_2, emask_3, emask_4], expr)
+
+            if isinstance(self.mfactor, list):
+                self.mCheckList(self.mlthresh, self.mfactor)
+                expr = "x " + str(self.mfactor[0]) + " <= x 2 / x 1.4 pow ?"
+                mask = core.std.Expr(emask, expr, self.outdepth)
+                for i in range(len(self.mlthresh)):
+                    texpr = "x " + str(self.mfactor[i+1]) + " <= x 2 / x 1.4 pow ?"
+                    tmask = core.std.Expr(emask, texpr)
+                    expr = "x " + str(self.mlthresh[i]) + " < z y ?"
+                    mask = core.std.Expr([clip, tmask, mask], expr)
+                mask = core.std.Expr(mask, "x " + str(self.multi) + " *", self.outdepth)
+            else:
+                expr = "x {factor} <= x 2 / {multi} * x 1.4 pow {multi} * ?".format(factor=self.mfactor, multi=self.multi)
+                mask = core.std.Expr(emask, expr)
+            if self.mpand is not 0:
+                mask = self.mInflate(mask, self.mpand[0])
+                mask = self.mDeflate(mask, self.mpand[1])
+            return core.rgvs.RemoveGrain(mask, 20)
+
     
     class mText(mParent):
         def __init__(self, luma):
@@ -668,8 +717,11 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             elif mtype == 2 or mtype == "CannySobel":
                 maskObj = mCannySobel(mthr, mthr2, mlthresh, mpand)
                 aaMask = maskObj.getMask(input8)
+            elif mtype == 3 or mtype == "Prewitt":
+                maskObj = mPrewitt(mthr, mlthresh, mpand)
+                aaMask = maskObj.getMask(input8)
             else:
-                pass
+                raise ValueError(FUNCNAME + ': Unknown mtype')
             
             # Let it back to 16 if down8
             if BPS == 16 and down8 is True:
