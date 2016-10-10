@@ -10,8 +10,7 @@ VapourSynth R28 or newer
 * EEDI2						
 * nnedi3						
 * RemoveGrain/Repair			
-* fmtconv						
-* GenericFilters				
+* fmtconv									
 * MSmoosh						
 * MVTools						
 * TemporalSoften			
