@@ -199,18 +199,12 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             return core.std.ShufflePlanes([y,uv], [0,1,2], colorfamily=vs.YUV)
         '''
     
-        def aaParaInit(self, args, name, default):
-            try:
-                return args[name]
-            except:
-                return default
-    
     class aaNnedi3(aaParent):
         def __init__(self, args):
             super(aaNnedi3, self).__init__()
-            self.nsize = self.aaParaInit(args, 'nsize', 3)
-            self.nns = self.aaParaInit(args, 'nns', 1)
-            self.qual = self.aaParaInit(args, 'qual', 2)
+            self.nsize = args.get('nsize', 3)
+            self.nns = args.get('nns', 1)
+            self.qual = args.get('qual', 2)
     
         def AA(self, clip):
             aaed = core.nnedi3.nnedi3(clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
@@ -225,7 +219,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaNnedi3SangNom(aaNnedi3):
         def __init__(self, args):
             super(aaNnedi3SangNom, self).__init__(args)
-            self.aa = self.aaParaInit(args, 'aa', 48)
+            self.aa = args.get('aa', 48)
         
         def AA(self, clip):
             aaed = core.nnedi3.nnedi3(clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
@@ -243,19 +237,19 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaNnedi3UpscaleSangNom(aaNnedi3SangNom):
         def __init__(self, args):
             super(aaNnedi3UpscaleSangNom, self).__init__(args)
-            self.nsize = self.aaParaInit(args, 'nsize', 1)
-            self.nns = self.aaParaInit(args, 'nns', 3)
-            self.qual = self.aaParaInit(args, 'qual', 2)
+            self.nsize = args.get('nsize', 1)
+            self.nns = args.get('nns', 3)
+            self.qual = args.get('qual', 2)
 
 
     class aaEedi3(aaParent):
         def __init__(self, eedi3m, args):
             super(aaEedi3, self).__init__()
-            self.alpha = self.aaParaInit(args, 'alpha', 0.5)
-            self.beta = self.aaParaInit(args, 'beta', 0.2)
-            self.gamma = self.aaParaInit(args, 'gamma', 20)
-            self.nrad = self.aaParaInit(args, 'nrad', 3)
-            self.mdis = self.aaParaInit(args, 'mdis', 30)
+            self.alpha = args.get('alpha', 0.5)
+            self.beta = args.get('beta', 0.2)
+            self.gamma = args.get('gamma', 20)
+            self.nrad = args.get('nrad', 3)
+            self.mdis = args.get('mdis', 30)
             self.eedi3m = eedi3m
             try:
                 self.eedi3 = core.eedi3_092.eedi3    # Check whether eedi3_092 is available
@@ -298,7 +292,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaEedi3SangNom(aaEedi3):
         def __init__(self, eedi3m, args):
             super(aaEedi3SangNom, self).__init__(eedi3m, args)
-            self.aa = self.aaParaInit(args, 'aa', 48)
+            self.aa = args.get('aa', 48)
 
         def build_eedi3_mask(self, clip):
             clip = self.down8(clip)
@@ -337,12 +331,11 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaEedi2(aaParent):
         def __init__(self, args):
             super(aaEedi2, self).__init__()
-            self.mthresh = self.aaParaInit(args, 'mthresh', 10)
-            self.lthresh = self.aaParaInit(args, 'lthresh', 20)
-            self.vthresh = self.aaParaInit(args, 'vthresh', 20)
-            self.maxd = self.aaParaInit(args, 'maxd', 24)
-            self.nt = self.aaParaInit(args, 'nt', 50)
-    
+            self.mthresh = args.get('mthresh', 10)
+            self.lthresh = args.get('lthresh', 20)
+            self.vthresh = args.get('vthresh', 20)
+            self.maxd = args.get('maxd', 24)
+            self.nt = args.get('nt', 50)
         def AA(self, clip):
             aaed = core.eedi2.EEDI2(clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
             aaed = self.aaResizer(aaed, W, H, -0.5)
@@ -356,7 +349,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaEedi2SangNom(aaEedi2):
         def __init__(self, args):
             super(aaEedi2SangNom, self).__init__(args)
-            self.aa = self.aaParaInit(args, 'aa', 48)
+            self.aa = args.get('aa', 48)
         
         def AA(self, clip):
             aaed = core.eedi2.EEDI2(clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
@@ -374,7 +367,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaSpline64NrSangNom(aaParent):
         def __init__(self, args):
             super(aaSpline64NrSangNom, self).__init__()
-            self.aa = self.aaParaInit(args, 'aa', 48)
+            self.aa = args.get('aa', 48)
     
         def AA(self, clip):
             aaed = core.fmtc.resample(clip, self.upw4, self.uph4, kernel="spline64")
@@ -392,8 +385,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaSpline64SangNom(aaParent):
         def __init__(self, args):
             super(aaSpline64SangNom, self).__init__()
-            self.aa = self.aaParaInit(args, 'aa', 48)
-            self.mode = self.aaParaInit(args, 'mode', 0)
+            self.aa = args.get('aa', 48)
         
         def AA(self, clip):
             aaed = core.fmtc.resample(clip, W, self.uph4, kernel="spline64")
@@ -410,7 +402,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     class aaPointSangNom(aaParent):
         def __init__(self, args):
             super(aaPointSangNom, self).__init__()
-            self.aa = self.aaParaInit(args, 'aa', 48)
+            self.aa = args.get('aa', 48)
             self.upw = self.dw * 2
             self.uph = self.dh * 2
     
