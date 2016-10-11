@@ -272,7 +272,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         def build_eedi3_mask(self, clip):
             clip = self.down8(clip)
             eedi3_mask = core.nnedi3.nnedi3(clip, field=1, show_mask=True)
-            eedi3_mask = core.std.Expr(eedi3_mask, ["x 254 > 255 0 ?", ""])
+            eedi3_mask = core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
             eedi3_mask_turn = core.std.Transpose(eedi3_mask)
             return [eedi3_mask, eedi3_mask_turn]
         
@@ -303,7 +303,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         def build_eedi3_mask(self, clip):
             clip = self.down8(clip)
             eedi3_mask = core.nnedi3.nnedi3(clip, field=1, show_mask=True)
-            eedi3_mask = core.std.Expr(eedi3_mask, ["x 254 > 255 0 ?", ""])
+            eedi3_mask = core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
             eedi3_mask_turn = core.std.Transpose(eedi3_mask)
             eedi3_mask_turn = core.resize.Bicubic(eedi3_mask_turn, self.uph4, W)
             return [eedi3_mask, eedi3_mask_turn]
