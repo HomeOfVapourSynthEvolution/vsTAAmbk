@@ -29,10 +29,10 @@ import havsfunc as haf
 import mvsfunc as mvf
 
 def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
-           mtype=None, mclip=None, mthr=None, mthr2=None, mlthresh=None, mpand=[2,1], txtprt=None,
-           thin=0, dark=0.0,
-           sharp=0, repair=0, postaa=None, src=None, stabilize=0,
-           down8=False, showmask=0, eedi3m=True, **pn):
+            mtype=None, mclip=None, mthr=None, mthr2=None, mlthresh=None, mpand=[2, 1], txtprt=None,
+            thin=0, dark=0.0,
+            sharp=0, repair=0, postaa=None, src=None, stabilize=0,
+            down8=False, showmask=0, eedi3m=True, **pn):
     
     
     core = vs.get_core()
@@ -83,8 +83,10 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     def Preaa(input, mode):
         nn = None if mode == 2 else core.nnedi3.nnedi3(input, field=3)
         nnt = None if mode == 1 else core.nnedi3.nnedi3(core.std.Transpose(input), field=3).std.Transpose()
-        clph = None if mode == 2 else core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0), core.std.SelectEvery(nn, cycle=2, offsets=1))
-        clpv = None if mode == 1 else core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0), core.std.SelectEvery(nnt, cycle=2, offsets=1))
+        clph = None if mode == 2 else core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0), 
+                                                     core.std.SelectEvery(nn, cycle=2, offsets=1))
+        clpv = None if mode == 1 else core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0), 
+                                                     core.std.SelectEvery(nnt, cycle=2, offsets=1))
         clp = core.std.Merge(clph, clpv) if mode == -1 else None
         if mode == 1:
             return clph
@@ -104,7 +106,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
     
     def Stabilize(clip, src, delta):
-        aaDiff = core.std.MakeDiff(src, input, planes=[0,1,2])
+        aaDiff = core.std.MakeDiff(src, input, planes=[0, 1, 2])
         inSuper = core.mv.Super(clip, pel=1)
         diffSuper = core.mv.Super(aaDiff, pel=1, levels=1)
         
@@ -128,10 +130,10 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         neutral = 128 << (BPS - 8)
         
         compareExpr = "x {neutral} - abs y {neutral} - abs < x y ?".format(neutral=neutral)
-        diffCompare = core.std.Expr([aaDiff,diffStab], compareExpr)
+        diffCompare = core.std.Expr([aaDiff, diffStab], compareExpr)
         diffCompare = core.std.Merge(diffCompare, diffStab, 0.6)
         
-        aaStab = core.std.MakeDiff(src, diffCompare, planes=[0,1,2])
+        aaStab = core.std.MakeDiff(src, diffCompare, planes=[0, 1, 2])
         return aaStab
     
     
@@ -144,15 +146,15 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         kp = keep * multiple
         
         diff1Expr = "x y - {neutral} +".format(neutral=neutral)
-        diff1 = core.std.Expr([src,sharped], diff1Expr)
+        diff1 = core.std.Expr([src, sharped], diff1Expr)
         
         diff2 = core.focus.TemporalSoften(diff1, radius=1, luma_threshold=255, chroma_threshold=255, scenechange=32, mode=2)
         
         diff3Expr = "x {neutral} - y {neutral} - * 0 < x {neutral} - {const} / {kp} * {neutral} + x {neutral} - abs y {neutral} - abs > x {kp} * y {const} {kp} - * + {const} / x ? ?".format(neutral=neutral, const=const, kp=kp)
-        diff3 = core.std.Expr([diff1,diff2], diff3Expr)
+        diff3 = core.std.Expr([diff1, diff2], diff3Expr)
         
         finalExpr = "x y {neutral} - -".format(neutral=neutral)
-        final = core.std.Expr([src,diff3], finalExpr)
+        final = core.std.Expr([src, diff3], finalExpr)
         
         return final
     
@@ -162,7 +164,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             sharped = haf.LSFmod(aaclip, strength=int(ABS_SHARP), defaults="old", source=aasrc)
         elif sharp > 0:
             per = int(40*ABS_SHARP)
-            matrix = [-1,-2,-1,-2,52 - per,-2,-1,-2,-1]
+            matrix = [-1, -2, -1, -2, 52 - per, -2, -1, -2, -1]
             sharped = core.std.Convolution(aaclip, matrix)
         elif sharp > -1:
             sharped = haf.LSFmod(aaclip, strength=round(ABS_SHARP*100), defaults="fast", source=aasrc)
@@ -187,8 +189,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             self.upw4 = round(self.dw * 0.375) * 4
             self.uph4 = round(self.dh * 0.375) * 4
     
-        
-        def aaResizer(self, clip, w, h, shift):
+        @staticmethod
+        def aaResizer(clip, w, h, shift):
             resized = core.fmtc.resample(clip, w, h, sy=[shift, shift*(1 << SUBSAMPLE)])
             return mvf.Depth(resized, PROCE_DEPTH)
     
@@ -256,8 +258,9 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             except AttributeError:
                 self.eedi3 = core.eedi3.eedi3
                 self.eedi3m = False    # Disable eedi3m if eedi3_092 is not availabe
-    
-        def down8(self, clip):
+
+        @staticmethod
+        def down8(clip):
             if BPS == 16 and PROCE_DEPTH != 8:
                 return mvf.Depth(clip, 8)
             else:
@@ -444,20 +447,23 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         def __init__(self):
             self.outdepth = vs.GRAY8 if PROCE_DEPTH == 8 else vs.GRAY16
             self.multi = 1 if PROCE_DEPTH == 8 else 257    # Multiple factor of Expr
-    
-        def mParaInit(self, mthr, default):
+
+        @staticmethod
+        def mParaInit(mthr, default):
             if mthr is not None:
                 return mthr
             else:
                 return default
-    
-        def mCheckList(self, list1, list2, list3):
+
+        @staticmethod
+        def mCheckList(list1, list2, list3):
             if len(list1) != (len(list2) - 1):
                 raise ValueError(FUNCNAME + ': num of mthr and mlthresh mismatch !')
             if len(list2) != len(list3):
                 raise ValueError(FUNCNAME + ': num of mthr and mthr2 mismatch !')
-            
-        def mGetGray(self, clip):
+        
+        @staticmethod    
+        def mGetGray(clip):
             return core.std.ShufflePlanes(clip, 0, vs.GRAY)
     
         '''
@@ -466,12 +472,14 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             return blc 
         '''  
     
-        def mExpand(self, clip, time):
+        @staticmethod
+        def mExpand(clip, time):
             for i in range(time):
                 clip = core.std.Maximum(clip, 0)
             return clip
     
-        def mInpand(self, clip, time):
+        @staticmethod
+        def mInpand(clip, time):
             for i in range(time):
                 clip = core.std.Minimum(clip, 0)
             return clip
@@ -493,7 +501,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 for i in range(len(self.mlthresh)):
                     tmask = core.tcanny.TCanny(clip, sigma=self.sigma[i+1], t_h=self.t_h[i+1], mode=0, planes=0)
                     expr = "x " + str(self.mlthresh[i]) + " < z y ?"
-                    mask = core.std.Expr([clip,tmask,mask], expr)
+                    mask = core.std.Expr([clip, tmask, mask], expr)
                 mask = core.std.Expr(mask, "x " + str(self.multi) + " *", self.outdepth)            
             
             else:
@@ -513,7 +521,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             self.mlthresh = mlthresh
             self.mpand = mpand
         
-        def mCheckList(self, list1, list2):
+        @staticmethod
+        def mCheckList(list1, list2):
             if len(list1) != (len(list2) - 1):
                 raise ValueError(FUNCNAME + ': num of mthr and mlthresh mismatch !')
     
@@ -529,7 +538,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                     texpr = "x " + str(self.binarize[i+1]) + " < 0 255 ?"
                     tmask = core.std.Expr(eemask, texpr)
                     expr = "x " + str(self.mlthresh[i]) + " < z y ?"
-                    mask = core.std.Expr([clip,tmask,mask], expr) 
+                    mask = core.std.Expr([clip, tmask, mask], expr) 
                 mask = core.std.Expr(mask, "x " + str(self.multi) + " *", self.outdepth)
             
             else:
@@ -549,16 +558,19 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             self.mlthresh = mlthresh
             self.mpand = mpand
 
-        def mCheckList(self, list1, list2):
+        @staticmethod
+        def mCheckList(list1, list2):
             if len(list1) != (len(list2) - 1):
                 raise ValueError(FUNCNAME + ': num of mthr and mlthresh mismatch !')
 
-        def mInflate(self, clip, time):
+        @staticmethod
+        def mInflate(clip, time):
             for i in range(time):
                 clip = core.std.Inflate(clip)
             return clip
 
-        def mDeflate(self, clip, time):
+        @staticmethod
+        def mDeflate(clip, time):
             for i in range(time):
                 clip = core.std.Deflate(clip)
             return clip
@@ -604,7 +616,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             u = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 1, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
             v = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 2, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
             txtExpr = "x {luma} > y 128 - abs {uvdiff} <= and z 128 - abs {uvdiff} <= and 255 0 ?".format(luma=self.luma, uvdiff=self.uvdiff)
-            txtmask = core.std.Expr([y,u,v], txtExpr, self.outdepth)
+            txtmask = core.std.Expr([y, u, v], txtExpr, self.outdepth)
             if BPS == 16:
                 txtmask = core.std.Expr(txtmask, "x 257 *", vs.GRAY16)
             txtmask = core.std.Maximum(txtmask).std.Maximum().std.Maximum()
@@ -660,7 +672,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         aaObj = aaEedi2PointSangNom(pn)
         
     else:
-        raise ValueError(FUNCNAME + ': Unknown aatype !')
+        pass
         
     # Get Anti-Aliasing Clip
     if aatype != 0:
@@ -698,7 +710,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     if mclip is not None:
         aaMask = mclip
         try:
-            mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0,1,2], first_plane=True)
+            mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0, 1, 2], first_plane=True)
         except:
             raise RuntimeError(FUNCNAME + ': Something wrong with your mclip. Check the resolution and bitdepth of mclip !')
     else:
@@ -719,7 +731,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             if BPS == 16 and down8 is True:
                 aaMask = core.std.Expr(aaMask, "x 257 *", vs.GRAY16)
                 
-            mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0,1,2], first_plane=True)
+            mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0, 1, 2], first_plane=True)
         else:
             mergedClip = stabedClip
     
@@ -727,7 +739,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     if IS_GRAY is False and txtprt is not None:
         txtmObj = mText(txtprt)
         txtMask = txtmObj.getMask(input8)
-        txtprtClip = core.std.MaskedMerge(mergedClip, src, txtMask, planes=[0,1,2], first_plane=True)
+        txtprtClip = core.std.MaskedMerge(mergedClip, src, txtMask, planes=[0, 1, 2], first_plane=True)
     else:
         txtprtClip = mergedClip
     
@@ -752,12 +764,12 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             raise RuntimeError(FUNCNAME + ': No mask to show if you don\'t have one.')
     elif showmask == 2:
         try:
-            return core.std.StackVertical([core.std.ShufflePlanes([aaMask,core.std.BlankClip(src)], [0,1,2], vs.YUV),src])
+            return core.std.StackVertical([core.std.ShufflePlanes([aaMask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
         except UnboundLocalError:
             raise RuntimeError(FUNCNAME + ': No mask to show if you don\'t have one.')
     elif showmask == 3:
         try:
-            return core.std.Interleave([core.std.ShufflePlanes([aaMask,core.std.BlankClip(src)], [0,1,2], vs.YUV),src])
+            return core.std.Interleave([core.std.ShufflePlanes([aaMask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
         except UnboundLocalError:
             raise RuntimeError(FUNCNAME + ': No mask to show if you don\'t have one.')
     else:
