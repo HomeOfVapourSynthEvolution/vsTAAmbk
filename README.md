@@ -10,14 +10,14 @@ VapourSynth R28 or newer
 * EEDI2						
 * nnedi3						
 * RemoveGrain/Repair			
-* fmtconv									
-* MSmoosh						
-* MVTools						
-* TemporalSoften			
+* fmtconv														
+* MVTools								
 * sangnom
+* eedi3_092 (opt)
 
 ####Script:
-* HAvsFunc r18 or newer (and its requirements)
+* HAvsFunc r22 or newer (and its requirements)
+* Mvsfunc (and its requirements)
 
 ##Usage
 import vsTAAmbk as taa
@@ -34,11 +34,11 @@ For more details please visit our threads in NMM-HD Forum.
     0 - No preaa ; 1 - Vertical ; 2 - Horizontal ; -1 - Both  
     Pretty useful against residual comb.  
 * *cycle* - Cycle times of main AA (Default 0).  
-    The main purpose of this is to against 3D aliasing or clip with horrible aliasing
+    The main purpose of cycle is to against 3D aliasing or clip with horrible aliasing
 * *mtype* - Select the method to build mask.  
 * *mclip* - Use your own mask clip instead of creating one.  
 * *mthr*,*mthr2* - Paraments for mask builder.  
-    For more details please see the threads in NMM-HD
+    For more details please see the thread in NMM-HD
 * *mlthresh* - Set luma thresh for n-pass mask. List  
 * *mpand* - Times of expanding and inpanding of the mask. (Default [2,1])  
 * *txtprt* - Create a mask to protect white captions on screen. 1~255 (Default None)  
@@ -55,4 +55,5 @@ For more details please visit our threads in NMM-HD Forum.
     Will use LimitFilter to limit the loss
 * *showmask* - show the mask  
     0 - Normal output ; 1 - Mask only ; 2 - Stack mask and clip ; 3 - Interleave mask and clip ; -1 - Text mask only
+* *eedi3m* - Use nnedi3 to create a mask for eedi3's mclip. Effective when you have eedi3_092
 * *other paraments* - Will be collected into a dict for particular aatype
