@@ -191,15 +191,20 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
         @staticmethod
         def aaResizer(clip, w, h, shift):
-            resized = core.fmtc.resample(clip, w, h, sy=[shift, shift*(1 << SUBSAMPLE)])
-            return mvf.Depth(resized, PROCE_DEPTH)
-    
-        ''' For vapoursynth R33 or greater
-        def aaResizer(self, clip, w, h, shift):
-            y = core.resize.Spline36(clip, width=w, height=h, src_top=shift)
-            uv = core.resize.Spline36(clip, width=w, height=h, src_top=shift*(1 << SUBSAMPLE))
-            return core.std.ShufflePlanes([y,uv], [0,1,2], colorfamily=vs.YUV)
-        '''
+            try:
+                y = core.std.ShufflePlanes(clip, 0, vs.GRAY)
+                u = core.std.ShufflePlanes(clip, 1, vs.GRAY)
+                v = core.std.ShufflePlanes(clip, 2, vs.GRAY)
+                y_resized = core.resize.Spline36(y, w, h, src_top=shift)
+                u_resized = core.resize.Spline36(u, int(0.5 * w), int(0.5 * h), src_top=shift * (1 << SUBSAMPLE))
+                v_resized = core.resize.Spline36(v, int(0.5 * w), int(0.5 * h), src_top=shift * (1 << SUBSAMPLE))
+                resized = core.std.ShufflePlanes([y_resized, u_resized, v_resized], [0, 0, 0], vs.YUV)
+                if resized.format.bits_per_sample != PROCE_DEPTH:
+                    resized = mvf.Depth(resized, PROCE_DEPTH)
+                return resized
+            except vs.Error:
+                resized = core.fmtc.resample(clip, w, h, sy=[shift, shift * (1 << SUBSAMPLE)])
+                return resized
     
     class aaNnedi3(aaParent):
         def __init__(self, args):
@@ -257,7 +262,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 self.eedi3 = core.eedi3_092.eedi3    # Check whether eedi3_092 is available
             except AttributeError:
                 self.eedi3 = core.eedi3.eedi3
-                self.eedi3m = False    # Disable eedi3m if eedi3_092 is not availabe
+                self.eedi3m = False    # Disable eedi3m if eedi3_092 is not available
 
         @staticmethod
         def down8(clip):
@@ -274,7 +279,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             return [eedi3_mask, eedi3_mask_turn]
         
         def AA(self, clip):
-            if eedi3m is False:
+            if self.eedi3m is False:
                 aaed = self.eedi3(self.down8(clip), field=1, dh=True, alpha=self.alpha, beta=self.beta, gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
                 aaed = self.aaResizer(aaed, W, H, -0.5)
                 aaed = core.std.Transpose(aaed)
@@ -671,8 +676,11 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     elif aatype == 'Eedi2PointSangNom':
         aaObj = aaEedi2PointSangNom(pn)
         
-    else:
+    elif aatype == 0:
         pass
+
+    else:
+        raise ValueError(FUNCNAME + ': Unknown AAtype !')
         
     # Get Anti-Aliasing Clip
     if aatype != 0:
