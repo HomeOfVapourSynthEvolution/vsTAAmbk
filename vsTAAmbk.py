@@ -196,8 +196,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 u = core.std.ShufflePlanes(clip, 1, vs.GRAY)
                 v = core.std.ShufflePlanes(clip, 2, vs.GRAY)
                 y_resized = core.resize.Spline36(y, w, h, src_top=shift)
-                u_resized = core.resize.Spline36(u, int(0.5 * w), int(0.5 * h), src_top=shift)
-                v_resized = core.resize.Spline36(v, int(0.5 * w), int(0.5 * h), src_top=shift)
+                u_resized = core.resize.Spline36(u, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
+                v_resized = core.resize.Spline36(v, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
                 resized = core.std.ShufflePlanes([y_resized, u_resized, v_resized], [0, 0, 0], vs.YUV)
                 if resized.format.bits_per_sample != PROCE_DEPTH:
                     resized = mvf.Depth(resized, PROCE_DEPTH)
@@ -735,8 +735,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
             else:
                 raise ValueError(FUNCNAME + ': Unknown mtype')
             
-            # Let it back to 16 if down8
-            if BPS == 16 and down8 is True:
+            # Let it back to 16 if input is 16bit
+            if BPS == 16:
                 aaMask = core.std.Expr(aaMask, "x 257 *", vs.GRAY16)
                 
             mergedClip = core.std.MaskedMerge(src, stabedClip, aaMask, planes=[0, 1, 2], first_plane=True)
