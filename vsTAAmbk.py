@@ -196,8 +196,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 u = core.std.ShufflePlanes(clip, 1, vs.GRAY)
                 v = core.std.ShufflePlanes(clip, 2, vs.GRAY)
                 y_resized = core.resize.Spline36(y, w, h, src_top=shift)
-                u_resized = core.resize.Spline36(u, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
-                v_resized = core.resize.Spline36(v, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
+                u_resized = core.resize.Spline36(u, int(w / (1 << SUBSAMPLE)), int(h / (1 << SUBSAMPLE)), src_top=shift)
+                v_resized = core.resize.Spline36(v, int(w / (1 << SUBSAMPLE)), int(h / (1 << SUBSAMPLE)), src_top=shift)
                 resized = core.std.ShufflePlanes([y_resized, u_resized, v_resized], [0, 0, 0], vs.YUV)
                 if resized.format.bits_per_sample != PROCE_DEPTH:
                     resized = mvf.Depth(resized, PROCE_DEPTH)
