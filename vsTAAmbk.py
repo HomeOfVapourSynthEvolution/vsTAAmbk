@@ -704,7 +704,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
     # PostAA
     if postaa is True:
-        sharpedClip = Soothe(sharpedClip, src)
+        sharpedClip = Soothe(sharpedClip, aaedClip)
     
     # Repair it
     repairedClip = sharpedClip if repair == 0 else core.rgvs.Repair(src, sharpedClip, repair)
