@@ -618,8 +618,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         
         def getMask(self, clip):
             y = core.std.ShufflePlanes(clip, 0, vs.GRAY)
-            u = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 1, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
-            v = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 2, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
+            u = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 1, vs.GRAY), W, H, sx=0.25), 8)
+            v = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 2, vs.GRAY), W, H, sx=0.25), 8)
             txtExpr = "x {luma} > y 128 - abs {uvdiff} <= and z 128 - abs {uvdiff} <= and 255 0 ?".format(luma=self.luma, uvdiff=self.uvdiff)
             txtmask = core.std.Expr([y, u, v], txtExpr, self.outdepth)
             if BPS == 16:
