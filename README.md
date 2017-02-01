@@ -1,4 +1,4 @@
-# vsTAAmbk 0.6.2
+# vsTAAmbk 0.6.3
 A ported AA-script from Avisynth  
 For more detials NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
