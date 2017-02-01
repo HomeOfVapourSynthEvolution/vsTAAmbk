@@ -196,8 +196,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
                 u = core.std.ShufflePlanes(clip, 1, vs.GRAY)
                 v = core.std.ShufflePlanes(clip, 2, vs.GRAY)
                 y_resized = core.resize.Spline36(y, w, h, src_top=shift)
-                u_resized = core.resize.Spline36(u, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
-                v_resized = core.resize.Spline36(v, int(w / (SUBSAMPLE + 1)), int(h / (SUBSAMPLE + 1)), src_top=shift)
+                u_resized = core.resize.Spline36(u, int(w / (1 << SUBSAMPLE)), int(h / (1 << SUBSAMPLE)), src_top=shift)
+                v_resized = core.resize.Spline36(v, int(w / (1 << SUBSAMPLE)), int(h / (1 << SUBSAMPLE)), src_top=shift)
                 resized = core.std.ShufflePlanes([y_resized, u_resized, v_resized], [0, 0, 0], vs.YUV)
                 if resized.format.bits_per_sample != PROCE_DEPTH:
                     resized = mvf.Depth(resized, PROCE_DEPTH)
@@ -618,8 +618,8 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
         
         def getMask(self, clip):
             y = core.std.ShufflePlanes(clip, 0, vs.GRAY)
-            u = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 1, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
-            v = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 2, vs.GRAY), W, H, sx=0.25), PROCE_DEPTH)
+            u = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 1, vs.GRAY), W, H, sx=0.25), 8)
+            v = mvf.Depth(core.fmtc.resample(core.std.ShufflePlanes(clip, 2, vs.GRAY), W, H, sx=0.25), 8)
             txtExpr = "x {luma} > y 128 - abs {uvdiff} <= and z 128 - abs {uvdiff} <= and 255 0 ?".format(luma=self.luma, uvdiff=self.uvdiff)
             txtmask = core.std.Expr([y, u, v], txtExpr, self.outdepth)
             if BPS == 16:
@@ -704,7 +704,7 @@ def TAAmbkX(input, aatype=1, strength=0.0, preaa=0, cycle=0,
     
     # PostAA
     if postaa is True:
-        sharpedClip = Soothe(sharpedClip, src)
+        sharpedClip = Soothe(sharpedClip, aaedClip)
     
     # Repair it
     repairedClip = sharpedClip if repair == 0 else core.rgvs.Repair(src, sharpedClip, repair)
