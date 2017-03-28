@@ -2,11 +2,11 @@
 An Anti-aliasing script ported from Avisynth  
 For more details NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
-##Requirements:
+## Requirements:
 
 VapourSynth R28 or newer
 
-####Plugins:
+#### Plugins:
 * EEDI2						
 * nnedi3						
 * RemoveGrain/Repair			
@@ -15,11 +15,11 @@ VapourSynth R28 or newer
 * sangnom
 * eedi3_092 (opt)
 
-####Script:
+#### Script:
 * HAvsFunc r22 or newer (and its requirements)
 * Mvsfunc (and its requirements)
 
-##Usage
+## Usage
 ```python
 import vsTAAmbk as taa
 
@@ -28,7 +28,7 @@ aa = taa.TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.
            aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, eedi3m=True, **pn)
 ```
 
-##Paraments
+## Paraments
 For more details please visit our threads in NMM-HD Forum.  
 * *clip*:<br />
     clip to process.<br />
