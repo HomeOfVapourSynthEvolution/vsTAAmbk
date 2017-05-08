@@ -602,7 +602,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     if src is None:
         src = clip
     else:
-        if clip.format.id is not src.format.id:
+        if clip.format.id != src.format.id:
             raise ValueError(MODULE_NAME + ': clip format and src format mismatch.')
         elif clip.width != src.width or clip.height != src.height:
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
