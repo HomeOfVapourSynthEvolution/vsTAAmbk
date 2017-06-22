@@ -1,4 +1,4 @@
-# vsTAAmbk 0.7.0
+# vsTAAmbk 0.7.1
 An Anti-aliasing script ported from Avisynth  
 For more details NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
@@ -13,6 +13,7 @@ VapourSynth R28 or newer
 * fmtconv														
 * MVTools								
 * sangnom
+× eedi3
 * eedi3_092 (opt)
 
 #### Script:
@@ -121,7 +122,7 @@ For more details please visit our threads in NMM-HD Forum.
 * *down8*: (Default: True)<br />
     If you set this to True, the clip will be down to 8bit before applying main AA kernel
 	and up it back to original bitdepth after applying main AA kernel.<br />
-	LimitedFilter will be used to reduce the loss in depth conversion.<br />
+	LimitFilter will be used to reduce the loss in depth conversion.<br />
 
 * *showmask*: (Default: 0)<br/>
     Output the mask instead of processed clip if you set it to not 0.<br />
