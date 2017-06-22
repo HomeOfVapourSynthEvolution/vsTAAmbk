@@ -13,7 +13,7 @@ VapourSynth R28 or newer
 * fmtconv														
 * MVTools								
 * sangnom
-× eedi3
+* eedi3
 * eedi3_092 (opt)
 
 #### Script:
