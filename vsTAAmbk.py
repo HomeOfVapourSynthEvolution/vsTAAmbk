@@ -703,7 +703,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     elif sharp == -1:
         blured = core.rgvs.RemoveGrain(aaed_clip, mode=20 if aaed_clip.width > 1100 else 11)
         diff = core.std.MakeDiff(aaed_clip, blured)
-        diff = core.std.Repair(diff, core.std.MakeDiff(src, aaed_clip), mode=13)
+        diff = core.rgvs.Repair(diff, core.std.MakeDiff(src, aaed_clip), mode=13)
         sharped_clip = core.std.MergeDiff(aaed_clip, diff)
     else:
         sharped_clip = aaed_clip
