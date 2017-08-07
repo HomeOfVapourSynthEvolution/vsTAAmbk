@@ -29,7 +29,7 @@ aa = taa.TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.
            aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, eedi3m=True, **pn)
 ```
 
-## Paraments
+## Parameters
 For more details please visit our threads in NMM-HD Forum.  
 * *clip*:<br />
     clip to process.<br />
@@ -74,7 +74,7 @@ For more details please visit our threads in NMM-HD Forum.
 	mask resolution, bitdepth, format, etc by yourself.<br />
 
 * *mthr*, *mthr2*:<br />
-    Paraments of mask.<br />
+    Parameters of mask.<br />
     Meaning of them depends on particular mtype.<br />
 
 * *mlthresh*: (Default None)<br />
@@ -131,5 +131,5 @@ For more details please visit our threads in NMM-HD Forum.
 * *eedi3m*: (Default: True)<br />
     Use nnedi3 to create a mask for eedi3's mclip. Effective when you have eedi3_092.<br />
 
-* *other paraments*:<br />
+* *other parameters*:<br />
     Will be collected into a dict for particular aatype.<br />
