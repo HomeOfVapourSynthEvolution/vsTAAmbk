@@ -330,19 +330,21 @@ class MaskCanny(MaskParent):
         self.t_h = kwargs.get('t_h', 8.0)
         self.lthresh = kwargs.get('lthresh', None)
         self.mpand = kwargs.get('mpand', [1, 0])
+        self.opencl = kwargs.get('opencl', False)
+        self.opencl_device = kwargs.get('opencl_devices', 0)
 
         if isinstance(self.sigma, (list, tuple)) and isinstance(self.t_h, (list, tuple)) \
                 and isinstance(self.lthresh, (list, tuple)):
             if len(self.sigma) != len(self.t_h) or len(self.lthresh) != len(self.sigma) - 1:
                 raise ValueError(MODULE_NAME + ': incorrect length of sigma, t_h or lthresh.')
-            self.mask = self.core.tcanny.TCanny(self.clip, sigma=self.sigma[0], t_h=self.t_h[0], mode=0, planes=0)
+            self.mask = self.tcanny(self.clip, sigma=self.sigma[0], t_h=self.t_h[0], mode=0, planes=0)
             for i in range(len(self.lthresh)):
-                temp_mask = self.core.tcanny.TCanny(self.clip, sigma=self.sigma[i+1], t_h=self.t_h[i+1],
-                                                    mode=0, planes=0)
+                temp_mask = self.tcanny(self.clip, sigma=self.sigma[i + 1], t_h=self.t_h[i + 1],
+                                        mode=0, planes=0)
                 expr = "x " + str(self.lthresh[i]) + " < z y ?"
                 self.mask = self.core.std.Expr([self.clip, temp_mask, self.mask], expr)
         elif not isinstance(self.sigma, (list, tuple)) and not isinstance(self.t_h, (list, tuple)):
-            self.mask = self.core.tcanny.TCanny(self.clip, sigma=self.sigma, t_h=self.t_h, mode=0, planes=0)
+            self.mask = self.tcanny(self.clip, sigma=self.sigma, t_h=self.t_h, mode=0, planes=0)
         else:
             raise ValueError(MODULE_NAME + ': sigma, t_h, lthresh shoule be same type (num, list or tuple).')
 
@@ -351,6 +353,13 @@ class MaskCanny(MaskParent):
         if self.mpand != [0, 0] and self.mpand != (0, 0):
             self.expand(self.mpand[0])
             self.inpand(self.mpand[1])
+
+    def tcanny(self, clip, sigma, t_h, mode, planes):
+        if self.opencl is True:
+            return self.core.tcanny.TCannyCL(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes,
+                                             device=self.opencl_device)
+        else:
+            return self.core.tcanny.TCanny(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes)
 
 
 class MaskSobel(MaskParent):
@@ -368,7 +377,7 @@ class MaskSobel(MaskParent):
             expr = 'x {binarize} < 0 255 ?'.format(binarize=self.binarize[0])
             self.mask = self.core.std.Expr(eemask, expr)
             for i in range(len(self.lthresh)):
-                temp_expr = 'x {binarize} < 0 255 ?'.format(binarize=self.binarize[i+1])
+                temp_expr = 'x {binarize} < 0 255 ?'.format(binarize=self.binarize[i + 1])
                 temp_mask = self.core.std.Expr(eemask, temp_expr)
                 luma_expr = 'x {thresh} < z y ?'.format(thresh=self.lthresh[i])
                 self.mask = self.core.std.Expr([self.clip, temp_mask, self.mask], luma_expr)
@@ -403,7 +412,7 @@ class MaskPrewitt(MaskParent):
             expr = 'x {factor} <= x 2 / x 1.4 pow ?'.format(factor=self.factor[0])
             self.mask = self.core.std.Expr(eemask, expr)
             for i in range(len(self.lthresh)):
-                temp_expr = "x {factor} <= x 2 / x 1.4 pow ?".format(factor=self.factor[i+1])
+                temp_expr = "x {factor} <= x 2 / x 1.4 pow ?".format(factor=self.factor[i + 1])
                 temp_mask = self.core.std.Expr(eemask, temp_expr)
                 luma_expr = "x {lthresh} < z y ?".format(lthresh=self.lthresh[i])
                 self.mask = self.core.std.Expr([self.clip, temp_mask, self.mask], luma_expr)
@@ -588,7 +597,7 @@ def soothe(clip, src, keep=24):
 
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
-           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, eedi3m=True, **pn):
+           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, eedi3m=True, **args):
     core = vs.get_core()
     aatypeu = aatype if aatypeu is None else aatypeu
     aatypev = aatype if aatypev is None else aatypev
@@ -647,30 +656,30 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         v = core.std.ShufflePlanes(edge_enhanced_clip, 2, vs.GRAY)
         if aatype != 0:
             try:
-                y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **pn).out()
+                y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **args).out()
                 cycle_y = cycle
                 while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **pn).out()
+                    y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **args).out()
                     cycle_y -= 1
                 y = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatype.')
         if aatypeu != 0:
             try:
-                u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **pn).out()  # Won't do predown for u plane
+                u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **args).out()  # Won't do predown for u plane
                 cycle_u = cycle
                 while cycle_u > 0:
-                    u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **pn).out()
+                    u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **args).out()
                     cycle_u -= 1
                 u = mvf.Depth(u, clip.format.bits_per_sample) if down8 is True else u
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatypeu.')
         if aatypev != 0:
             try:
-                v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **pn).out()  # Won't do predown for v plane
+                v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **args).out()  # Won't do predown for v plane
                 cycle_v = cycle
                 while cycle_v > 0:
-                    v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **pn).out()
+                    v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **args).out()
                     cycle_v -= 1
                 v = mvf.Depth(v, clip.format.bits_per_sample) if down8 is True else v
             except KeyError:
@@ -680,10 +689,10 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         y = edge_enhanced_clip
         if aatype != 0:
             try:
-                y = aa_kernel[aatype](y, strength, down8, **pn).out()
+                y = aa_kernel[aatype](y, strength, down8, **args).out()
                 cycle_y = cycle
                 while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, **pn).out()
+                    y = aa_kernel[aatype](y, strength, down8, **args).out()
                     cycle_y -= 1
                 aaed_clip = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
             except KeyError:
@@ -721,9 +730,12 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                                              'Maybe resolution or bit_depth mismatch.')
     elif mtype != 0:
         if mtype == 1 or mtype is 'Canny':
+            opencl = args.get('canny_cl', False)
+            opencl_device = args.get('canny_cl_device', 0)
             mthr = 1.2 if mthr is None else mthr
             mthr2 = 8.0 if mthr2 is None else mthr2
-            mask = MaskCanny(clip, sigma=mthr, t_h=mthr2, lthresh=mlthresh, mpand=mpand).out()
+            mask = MaskCanny(clip, sigma=mthr, t_h=mthr2, lthresh=mlthresh, mpand=mpand, opencl=opencl,
+                             opencl_devices=opencl_device).out()
         elif mtype == 2 or mtype is 'Sobel':
             mthr = 1.2 if mthr is None else mthr
             mthr2 = 48 if mthr2 is None else mthr2
