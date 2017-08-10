@@ -131,5 +131,11 @@ For more details please visit our threads in NMM-HD Forum.
 * *eedi3m*: (Default: True)<br />
     Use nnedi3 to create a mask for eedi3's mclip. Effective when you have eedi3_092.<br />
 
+* *canny_cl*: (Default: False)<br />
+    Set this to True if you want to use TCannyCL instead of TCanny.
+
+* *canny_cl_device*: (Default: 0)<br />
+    Set the device id for TCannyCL.
+
 * *other parameters*:<br />
     Will be collected into a dict for particular aatype.<br />
