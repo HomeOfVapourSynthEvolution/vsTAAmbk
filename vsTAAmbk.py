@@ -586,6 +586,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         elif clip.width != src.width or clip.height != src.height:
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
 
+    opencl_device = args.get('opencl_device', 0)
+
     preaa_clip = clip if preaa == 0 else daa(clip, preaa)
 
     if thin == 0 and dark == 0:
@@ -626,30 +628,32 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         v = core.std.ShufflePlanes(edge_enhanced_clip, 2, vs.GRAY)
         if aatype != 0:
             try:
-                y = aa_kernel[aatype](y, strength, down8, opencl=opencl, **args).out()
+                y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                 cycle_y = cycle
                 while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, opencl=opencl, **args).out()
+                    y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_y -= 1
                 y = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatype.')
         if aatypeu != 0:
             try:
-                u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, **args).out()  # Won't do predown for u plane
+                u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device,
+                                       **args).out()  # Won't do predown for u plane
                 cycle_u = cycle
                 while cycle_u > 0:
-                    u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, **args).out()
+                    u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_u -= 1
                 u = mvf.Depth(u, clip.format.bits_per_sample) if down8 is True else u
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatypeu.')
         if aatypev != 0:
             try:
-                v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, **args).out()  # Won't do predown for v plane
+                v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device,
+                                       **args).out()  # Won't do predown for v plane
                 cycle_v = cycle
                 while cycle_v > 0:
-                    v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, **args).out()
+                    v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_v -= 1
                 v = mvf.Depth(v, clip.format.bits_per_sample) if down8 is True else v
             except KeyError:
@@ -700,8 +704,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                                              'Maybe resolution or bit_depth mismatch.')
     elif mtype != 0:
         if mtype == 1 or mtype is 'Canny':
-            opencl = args.get('canny_cl', False)
-            opencl_device = args.get('canny_cl_device', 0)
+            opencl_device = args.get('opencl_device', 0)
             mthr = 1.2 if mthr is None else mthr
             mthr2 = 8.0 if mthr2 is None else mthr2
             mask = MaskCanny(clip, sigma=mthr, t_h=mthr2, lthresh=mlthresh, mpand=mpand, opencl=opencl,
