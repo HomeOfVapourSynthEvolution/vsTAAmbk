@@ -115,11 +115,15 @@ class AAEedi3(AAParent):
                 self.eedi3_args['device'] = args.get('opencl_device', 0)
             except AttributeError:
                 self.eedi3 = self.core.eedi3.eedi3
+                if self.process_depth > 8:
+                    self.clip = mvf.Depth(self.clip, 8)
         else:
             try:
                 self.eedi3 = self.core.eedi3m.EEDI3
             except AttributeError:
                 self.eedi3 = self.core.eedi3.eedi3
+                if self.process_depth > 8:
+                    self.clip = mvf.Depth(self.clip, 8)
 
     '''
     def build_eedi3_mask(self, clip):
