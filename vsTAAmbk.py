@@ -105,14 +105,16 @@ class AANnedi3UpscaleSangNom(AANnedi3SangNom):
 class AAEedi3(AAParent):
     def __init__(self, clip, strength=0, down8=False, **args):
         super(AAEedi3, self).__init__(clip, strength, down8)
-        self.alpha = args.get('alpha', 0.5)
-        self.beta = args.get('beta', 0.2)
-        self.gamma = args.get('gamma', 20)
-        self.nrad = args.get('nrad', 3)
-        self.mdis = args.get('mdis', 30)
+        self.eedi3_args = {'alpha': args.get('alpha', 0.5), 'beta': args.get('beta', 0.2),
+                           'gamma': args.get('gamma', 20), 'nrad': args.get('nrad', 3), 'mdis': args.get('mdis', 30)}
+
         self.opencl = args.get('opencl', False)
         if self.opencl is True:
-            self.eedi3 = self.core.eedi3m.EEDI3CL
+            try:
+                self.eedi3 = self.core.eedi3m.EEDI3CL
+                self.eedi3_args['device'] = args.get('opencl_device', 0)
+            except AttributeError:
+                self.eedi3 = self.core.eedi3.eedi3
         else:
             try:
                 self.eedi3 = self.core.eedi3m.EEDI3
@@ -130,12 +132,10 @@ class AAEedi3(AAParent):
     '''
 
     def out(self):
-        aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                          gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
+        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                          gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
+        aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed_bits = aaed.format.bits_per_sample
@@ -157,12 +157,10 @@ class AAEedi3SangNom(AAEedi3):
     '''
 
     def out(self):
-        aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                          gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
+        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                          gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
+        aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
@@ -567,7 +565,8 @@ def soothe(clip, src, keep=24):
 
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
-           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, **args):
+           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=0,
+           **args):
     core = vs.get_core()
     aatypeu = aatype if aatypeu is None else aatypeu
     aatypev = aatype if aatypev is None else aatypev
@@ -585,8 +584,6 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             raise ValueError(MODULE_NAME + ': clip format and src format mismatch.')
         elif clip.width != src.width or clip.height != src.height:
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
-
-    opencl_device = args.get('opencl_device', 0)
 
     preaa_clip = clip if preaa == 0 else daa(clip, preaa)
 
