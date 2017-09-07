@@ -105,21 +105,23 @@ class AANnedi3UpscaleSangNom(AANnedi3SangNom):
 class AAEedi3(AAParent):
     def __init__(self, clip, strength=0, down8=False, **args):
         super(AAEedi3, self).__init__(clip, strength, down8)
-        self.alpha = args.get('alpha', 0.5)
-        self.beta = args.get('beta', 0.2)
-        self.gamma = args.get('gamma', 20)
-        self.nrad = args.get('nrad', 3)
-        self.mdis = args.get('mdis', 30)
-        self.eedi3m = args.get('eedi3m', True)
-        # Make sure process depth is 8bit because eedi3 is too slow for high depth processing
-        if clip.format.bits_per_sample > 8:
-            self.clip = mvf.Depth(self.clip, 8)
-        try:
-            self.eedi3 = self.core.eedi3_092.eedi3
-        except AttributeError:
-            self.eedi3 = self.core.eedi3.eedi3
-            self.eedi3m = False
+        self.eedi3_args = {'alpha': args.get('alpha', 0.5), 'beta': args.get('beta', 0.2),
+                           'gamma': args.get('gamma', 20), 'nrad': args.get('nrad', 3), 'mdis': args.get('mdis', 30)}
 
+        self.opencl = args.get('opencl', False)
+        if self.opencl is True:
+            try:
+                self.eedi3 = self.core.eedi3m.EEDI3CL
+                self.eedi3_args['device'] = args.get('opencl_device', 0)
+            except AttributeError:
+                self.eedi3 = self.core.eedi3.eedi3
+        else:
+            try:
+                self.eedi3 = self.core.eedi3m.EEDI3
+            except AttributeError:
+                self.eedi3 = self.core.eedi3.eedi3
+
+    '''
     def build_eedi3_mask(self, clip):
         eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
         eedi3_mask = self.core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
@@ -127,33 +129,17 @@ class AAEedi3(AAParent):
         if self.dfactor != 1:
             eedi3_mask_turn = self.core.resize.Bicubic(eedi3_mask_turn, self.clip_height, self.dw)
         return eedi3_mask, eedi3_mask_turn
+    '''
 
     def out(self):
-        if self.eedi3m is False:
-            aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                              gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
-            aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                              gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
-            aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed_bits = aaed.format.bits_per_sample
-            return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
-        elif self.eedi3m is True:
-            mask = self.build_eedi3_mask(self.clip)
-            aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
-                              nrad=self.nrad, mdis=self.mdis, mclip=mask[0])
-            aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
-                              nrad=self.nrad, mdis=self.mdis, mclip=mask[1])
-            aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed_bits = aaed.format.bits_per_sample
-            return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
-        else:
-            raise ValueError(MODULE_NAME + ': Incorrect eedi3m setting.')
+        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
+        aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
+        aaed = self.core.std.Transpose(aaed)
+        aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
+        aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
+        aaed = self.core.std.Transpose(aaed)
+        aaed_bits = aaed.format.bits_per_sample
+        return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
 
 
 class AAEedi3SangNom(AAEedi3):
@@ -161,45 +147,27 @@ class AAEedi3SangNom(AAEedi3):
         super(AAEedi3SangNom, self).__init__(clip, strength, down8, **args)
         self.aa = args.get('aa', 48)
 
+    '''
     def build_eedi3_mask(self, clip):
         eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
         eedi3_mask = self.core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
         eedi3_mask_turn = self.core.std.Transpose(eedi3_mask)
         eedi3_mask_turn = self.core.resize.Bicubic(eedi3_mask_turn, self.uph4, self.dw)
         return eedi3_mask, eedi3_mask_turn
+    '''
 
     def out(self):
-        if self.eedi3m is False:
-            aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                              gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
-            aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta,
-                              gamma=self.gamma, nrad=self.nrad, mdis=self.mdis)
-            aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
-            aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
-            aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-            aaed_bits = aaed.format.bits_per_sample
-            return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
-        elif self.eedi3m is True:
-            mask = self.build_eedi3_mask(self.clip)
-            aaed = self.eedi3(self.clip, field=1, dh=True, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
-                              nrad=self.nrad, mdis=self.mdis, mclip=mask[0])
-            aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.eedi3(aaed, field=1, dh=True, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
-                              nrad=self.nrad, mdis=self.mdis, mclip=mask[1])
-            aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
-            aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
-            aaed = self.core.std.Transpose(aaed)
-            aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
-            aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-            aaed_bits = aaed.format.bits_per_sample
-            return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
-        else:
-            raise ValueError(MODULE_NAME + ': Incorrect eedi3m setting.')
+        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
+        aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
+        aaed = self.core.std.Transpose(aaed)
+        aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
+        aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
+        aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
+        aaed = self.core.std.Transpose(aaed)
+        aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
+        aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
+        aaed_bits = aaed.format.bits_per_sample
+        return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
 
 
 class AAEedi2(AAParent):
@@ -597,7 +565,8 @@ def soothe(clip, src, keep=24):
 
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
-           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, eedi3m=True, **args):
+           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=0,
+           **args):
     core = vs.get_core()
     aatypeu = aatype if aatypeu is None else aatypeu
     aatypev = aatype if aatypev is None else aatypev
@@ -656,30 +625,32 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         v = core.std.ShufflePlanes(edge_enhanced_clip, 2, vs.GRAY)
         if aatype != 0:
             try:
-                y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **args).out()
+                y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                 cycle_y = cycle
                 while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, eedi3m=eedi3m, **args).out()
+                    y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_y -= 1
                 y = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatype.')
         if aatypeu != 0:
             try:
-                u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **args).out()  # Won't do predown for u plane
+                u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device,
+                                       **args).out()  # Won't do predown for u plane
                 cycle_u = cycle
                 while cycle_u > 0:
-                    u = aa_kernel[aatypeu](u, 0, down8, eedi3m=eedi3m, **args).out()
+                    u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_u -= 1
                 u = mvf.Depth(u, clip.format.bits_per_sample) if down8 is True else u
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatypeu.')
         if aatypev != 0:
             try:
-                v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **args).out()  # Won't do predown for v plane
+                v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device,
+                                       **args).out()  # Won't do predown for v plane
                 cycle_v = cycle
                 while cycle_v > 0:
-                    v = aa_kernel[aatypev](v, 0, down8, eedi3m=eedi3m, **args).out()
+                    v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
                     cycle_v -= 1
                 v = mvf.Depth(v, clip.format.bits_per_sample) if down8 is True else v
             except KeyError:
@@ -730,8 +701,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                                              'Maybe resolution or bit_depth mismatch.')
     elif mtype != 0:
         if mtype == 1 or mtype is 'Canny':
-            opencl = args.get('canny_cl', False)
-            opencl_device = args.get('canny_cl_device', 0)
+            opencl_device = args.get('opencl_device', 0)
             mthr = 1.2 if mthr is None else mthr
             mthr2 = 8.0 if mthr2 is None else mthr2
             mask = MaskCanny(clip, sigma=mthr, t_h=mthr2, lthresh=mlthresh, mpand=mpand, opencl=opencl,
