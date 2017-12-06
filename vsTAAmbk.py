@@ -248,11 +248,12 @@ class AASpline64SangNom(AAParent):
 
 
 class AAPointSangNom(AAParent):
-    def __init__(self, clip, down8=False, **args):
+    def __init__(self, clip, strength=0, down8=False, **args):
         super(AAPointSangNom, self).__init__(clip, 0, down8)
         self.aa = args.get('aa', 48)
         self.upw = self.clip_width * 2
         self.uph = self.clip_height * 2
+        self.strength = strength  # Won't use this
 
     def out(self):
         aaed = self.core.resize.Point(self.clip, self.upw, self.uph)
@@ -511,26 +512,23 @@ def temporal_stabilize(clip, src, delta=3, pel=1, retain=0.6):
     src_bits = src.format.bits_per_sample
     if clip_bits != src_bits:
         raise ValueError(MODULE_NAME + ': temporal_stabilize: bits depth of clip and src mismatch.')
+    if delta not in [1, 2, 3]:
+        raise ValueError(MODULE_NAME + ': temporal_stabilize: delta (1~3) invalid.')
 
     diff = core.std.MakeDiff(src, clip)
     clip_super = core.mv.Super(clip, pel=pel)
     diff_super = core.mv.Super(diff, pel=pel, levels=1)
 
-    fv3 = core.mv.Analyse(clip_super, isb=False, delta=3, overlap=8, blksize=16) if delta == 3 else None
-    fv2 = core.mv.Analyse(clip_super, isb=False, delta=2, overlap=8, blksize=16) if delta >= 2 else None
-    fv1 = core.mv.Analyse(clip_super, isb=False, delta=1, overlap=8, blksize=16) if delta >= 1 else None
-    bv1 = core.mv.Analyse(clip_super, isb=True, delta=1, overlap=8, blksize=16) if delta >= 1 else None
-    bv2 = core.mv.Analyse(clip_super, isb=True, delta=2, overlap=8, blksize=16) if delta >= 2 else None
-    bv3 = core.mv.Analyse(clip_super, isb=True, delta=3, overlap=8, blksize=16) if delta == 3 else None
+    backward_vectors = [core.mv.Analyse(clip_super, isb=True, delta=i+1, overlap=8, blksize=16) for i in range(delta)]
+    forward_vectors = [core.mv.Analyse(clip_super, isb=False, delta=i+1, overlap=8, blksize=16) for i in range(delta)]
+    vectors = [vector for vector_group in zip(backward_vectors, forward_vectors) for vector in vector_group]
 
-    if delta == 1:
-        diff_stabilized = core.mv.Degrain1(diff, diff_super, bv1, fv1)
-    elif delta == 2:
-        diff_stabilized = core.mv.Degrain2(diff, diff_super, bv1, fv1, bv2, fv2)
-    elif delta == 3:
-        diff_stabilized = core.mv.Degrain3(diff, diff_super, bv1, fv1, bv2, fv2, bv3, fv3)
-    else:
-        raise ValueError(MODULE_NAME + ': temporal_stabilize: delta (1~3) invalid.')
+    stabilize_func = {
+        1: core.mv.Degrain1,
+        2: core.mv.Degrain2,
+        3: core.mv.Degrain3
+    }
+    diff_stabilized = stabilize_func[delta](diff, diff_super, *vectors)
 
     neutral = 1 << (clip_bits - 1)
     expr = 'x {neutral} - abs y {neutral} - abs < x y ?'.format(neutral=neutral)
@@ -682,6 +680,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         per = int(40 * abs_sharp)
         matrix = [-1, -2, -1, -2, 52 - per, -2, -1, -2, -1]
         sharped_clip = core.std.Convolution(aaed_clip, matrix)
+    elif sharp == 0:
+        sharped_clip = aaed_clip
     elif sharp > -1:
         sharped_clip = haf.LSFmod(aaed_clip, strength=round(abs_sharp * 100), defaults='fast', source=src)
     elif sharp == -1:
@@ -734,27 +734,18 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     else:
         clamped_clip = txt_protected_clip
 
-    if showmask == -1:
-        try:
+    try:
+        if showmask == -1:
             return text_mask
-        except UnboundLocalError:
-            raise RuntimeError(MODULE_NAME + ': No txtmask to show if you don\'t have one.')
-    elif showmask == 1:
-        try:
+        elif showmask == 1:
             return mask
-        except UnboundLocalError:
-            raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
-    elif showmask == 2:
-        try:
+        elif showmask == 2:
             return core.std.StackVertical(
                 [core.std.ShufflePlanes([mask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
-        except UnboundLocalError:
-            raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
-    elif showmask == 3:
-        try:
+        elif showmask == 3:
             return core.std.Interleave(
                 [core.std.ShufflePlanes([mask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
-        except UnboundLocalError:
-            raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
-    else:
-        return clamped_clip
+        else:
+            return clamped_clip
+    except UnboundLocalError:
+        raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
