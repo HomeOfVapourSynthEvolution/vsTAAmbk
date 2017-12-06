@@ -682,6 +682,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         per = int(40 * abs_sharp)
         matrix = [-1, -2, -1, -2, 52 - per, -2, -1, -2, -1]
         sharped_clip = core.std.Convolution(aaed_clip, matrix)
+    elif sharp == 0:
+        sharped_clip = aaed_clip
     elif sharp > -1:
         sharped_clip = haf.LSFmod(aaed_clip, strength=round(abs_sharp * 100), defaults='fast', source=src)
     elif sharp == -1:
