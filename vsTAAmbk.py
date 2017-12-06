@@ -248,11 +248,12 @@ class AASpline64SangNom(AAParent):
 
 
 class AAPointSangNom(AAParent):
-    def __init__(self, clip, down8=False, **args):
+    def __init__(self, clip, strength=0, down8=False, **args):
         super(AAPointSangNom, self).__init__(clip, 0, down8)
         self.aa = args.get('aa', 48)
         self.upw = self.clip_width * 2
         self.uph = self.clip_height * 2
+        self.strength = strength  # Won't use this
 
     def out(self):
         aaed = self.core.resize.Point(self.clip, self.upw, self.uph)
