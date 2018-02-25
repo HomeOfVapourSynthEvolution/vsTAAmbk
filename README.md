@@ -13,7 +13,7 @@ VapourSynth R28 or newer
 * [MVTools](https://github.com/dubhater/vapoursynth-mvtools)							
 * [SangNom](https://bitbucket.org/James1201/vapoursynth-sangnom/overview)
 * [TCanny](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TCanny)
-* [eedi3m (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3github)
+* [eedi3m (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3)
 
 #### Script:
 * [havsfunc](https://github.com/HomeOfVapourSynthEvolution/havsfunc) r22 or newer (and its requirements)
