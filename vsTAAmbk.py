@@ -65,12 +65,23 @@ class AANnedi3(AAParent):
         self.nsize = args.get('nsize', 3)
         self.nns = args.get('nns', 1)
         self.qual = args.get('qual', 2)
+        self.opencl = args.get('opencl', False)
+        if self.opencl is True:
+            try:
+                self.nnedi3 = self.core.nnedi3cl.NNEDI3CL
+            except AttributeError:
+                self.nnedi3 = self.core.nnedi3.nnedi3
+        else:
+            try:
+                self.nnedi3 = self.core.znedi3.nnedi3
+            except AttributeError:
+                self.nnedi3 = self.core.nnedi3.nnedi3
 
     def out(self):
-        aaed = self.core.nnedi3.nnedi3(self.clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
+        aaed = self.nnedi3(self.clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, -0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed = self.core.nnedi3.nnedi3(aaed, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
+        aaed = self.nnedi3(aaed, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
         aaed = self.resize(aaed, self.clip_height, self.clip_width, -0.5)
         aaed = self.core.std.Transpose(aaed)
         return aaed
@@ -82,10 +93,10 @@ class AANnedi3SangNom(AANnedi3):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aaed = self.core.nnedi3.nnedi3(self.clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
+        aaed = self.nnedi3(self.clip, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
         aaed = self.resize(aaed, self.clip_width, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed = self.core.nnedi3.nnedi3(aaed, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
+        aaed = self.nnedi3(aaed, field=1, dh=True, nsize=self.nsize, nns=self.nns, qual=self.qual)
         aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
@@ -124,7 +135,6 @@ class AAEedi3(AAParent):
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
                     self.clip = mvf.Depth(self.clip, 8)
-
     '''
     def build_eedi3_mask(self, clip):
         eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
@@ -483,22 +493,33 @@ class FadeTextMask(MaskParent):
                     raise ValueError(MODULE_NAME + ': incorrect apply range setting. Possible end less than start.')
 
 
-def daa(clip, mode=-1):
+def daa(clip, mode=-1, opencl=False):
     core = vs.get_core()
+    daa_nnedi3 =core.nnedi3.nnedi3
+    if opencl is True:
+        try:
+            daa_nnedi3 = core.nnedi3cl.NNEDI3CL
+        except AttributeError:
+            daa_nnedi3 = core.nnedi3.nnedi3
+    else:
+        try:
+            daa_nnedi3 = core.znedi3.nnedi3
+        except AttributeError:
+            daa_nnedi3 = core.nnedi3.nnedi3
     if mode == -1:
-        nn = core.nnedi3.nnedi3(clip, field=3)
-        nnt = core.nnedi3.nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
+        nn = daa_nnedi3(clip, field=3)
+        nnt = daa_nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
         clph = core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0),
                               core.std.SelectEvery(nn, cycle=2, offsets=1))
         clpv = core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0),
                               core.std.SelectEvery(nnt, cycle=2, offsets=1))
         clp = core.std.Merge(clph, clpv)
     elif mode == 1:
-        nn = core.nnedi3.nnedi3(clip, field=3)
+        nn = daa_nnedi3(clip, field=3)
         clp = core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0),
                              core.std.SelectEvery(nn, cycle=2, offsets=1))
     elif mode == 2:
-        nnt = core.nnedi3.nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
+        nnt = daa_nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
         clp = core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0),
                              core.std.SelectEvery(nnt, cycle=2, offsets=1))
     else:
@@ -587,7 +608,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         elif clip.width != src.width or clip.height != src.height:
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
 
-    preaa_clip = clip if preaa == 0 else daa(clip, preaa)
+    preaa_clip = clip if preaa == 0 else daa(clip, preaa, opencl)
 
     if thin == 0 and dark == 0:
         edge_enhanced_clip = preaa_clip
