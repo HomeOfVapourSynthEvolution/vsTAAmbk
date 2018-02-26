@@ -128,10 +128,6 @@ class AAEedi3(AAParent):
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
                     self.clip = mvf.Depth(self.clip, 8)
-            try:
-                self.nnedi3 = self.core.nnedi3cl.NNEDI3CL
-            except AttributeError:
-                self.nnedi3 = self.core.nnedi3.nnedi3
         else:
             try:
                 self.eedi3 = self.core.eedi3m.EEDI3
@@ -139,14 +135,9 @@ class AAEedi3(AAParent):
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
                     self.clip = mvf.Depth(self.clip, 8)
-            try:
-                self.nnedi3 = self.core.znedi3.nnedi3
-            except AttributeError:
-                self.nnedi3 = self.core.nnedi3.nnedi3
-
     '''
     def build_eedi3_mask(self, clip):
-        eedi3_mask = self.nnedi3(clip, field=1, show_mask=True)
+        eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
         eedi3_mask = self.core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
         eedi3_mask_turn = self.core.std.Transpose(eedi3_mask)
         if self.dfactor != 1:
@@ -172,7 +163,7 @@ class AAEedi3SangNom(AAEedi3):
 
     '''
     def build_eedi3_mask(self, clip):
-        eedi3_mask = self.nnedi3(clip, field=1, show_mask=True)
+        eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
         eedi3_mask = self.core.std.Expr([eedi3_mask, clip], "x 254 > x y - 0 = not and 255 0 ?")
         eedi3_mask_turn = self.core.std.Transpose(eedi3_mask)
         eedi3_mask_turn = self.core.resize.Bicubic(eedi3_mask_turn, self.uph4, self.dw)
@@ -505,7 +496,7 @@ class FadeTextMask(MaskParent):
 def daa(clip, mode=-1, opencl=False):
     core = vs.get_core()
     daa_nnedi3 =core.nnedi3.nnedi3
-    if self.opencl is True:
+    if opencl is True:
         try:
             daa_nnedi3 = core.nnedi3cl.NNEDI3CL
         except AttributeError:
