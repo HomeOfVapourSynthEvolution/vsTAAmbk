@@ -26,7 +26,7 @@ class Clip:
 
 
 class AAParent(Clip):
-    def __init__(self, clip, strength=0, down8=False):
+    def __init__(self, clip, strength=0.0, down8=False):
         super(AAParent, self).__init__(clip)
         self.dfactor = 1 - min(strength, 0.5)
         self.dw = round(self.clip_width * self.dfactor / 4) * 4
@@ -70,7 +70,10 @@ class AANnedi3(AAParent):
             try:
                 self.nnedi3 = self.core.nnedi3cl.NNEDI3CL
             except AttributeError:
-                self.nnedi3 = self.core.nnedi3.nnedi3
+                try:
+                    self.nnedi3 = self.core.znedi3.nnedi3
+                except AttributeError:
+                    self.nnedi3 = self.core.nnedi3.nnedi3
         else:
             try:
                 self.nnedi3 = self.core.znedi3.nnedi3
@@ -135,6 +138,7 @@ class AAEedi3(AAParent):
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
                     self.clip = mvf.Depth(self.clip, 8)
+
     '''
     def build_eedi3_mask(self, clip):
         eedi3_mask = self.core.nnedi3.nnedi3(clip, field=1, show_mask=True)
@@ -339,8 +343,11 @@ class MaskCanny(MaskParent):
 
     def tcanny(self, clip, sigma, t_h, mode, planes):
         if self.opencl is True:
-            return self.core.tcanny.TCannyCL(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes,
-                                             device=self.opencl_device)
+            try:
+                return self.core.tcanny.TCannyCL(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes,
+                                                 device=self.opencl_device)
+            except AttributeError:
+                return self.core.tcanny.TCanny(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes)
         else:
             return self.core.tcanny.TCanny(clip, sigma=sigma, t_h=t_h, mode=mode, planes=planes)
 
@@ -495,7 +502,6 @@ class FadeTextMask(MaskParent):
 
 def daa(clip, mode=-1, opencl=False):
     core = vs.get_core()
-    daa_nnedi3 =core.nnedi3.nnedi3
     if opencl is True:
         try:
             daa_nnedi3 = core.nnedi3cl.NNEDI3CL
