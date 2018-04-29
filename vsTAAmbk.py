@@ -709,6 +709,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                 aaed_clip = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
             except KeyError:
                 raise ValueError(MODULE_NAME + ': unknown aatype.')
+        else:
+            aaed_clip = y
     else:
         raise ValueError(MODULE_NAME + ': Unsupported color family.')
 
