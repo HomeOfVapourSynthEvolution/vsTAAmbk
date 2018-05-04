@@ -28,6 +28,7 @@ class Clip:
 class AAParent(Clip):
     def __init__(self, clip, strength=0.0, down8=False):
         super(AAParent, self).__init__(clip)
+        self.aa_clip = self.clip
         self.dfactor = 1 - max(min(strength, 0.5), 0)
         self.dw = round(self.clip_width * self.dfactor / 4) * 4
         self.dh = round(self.clip_height * self.dfactor / 4) * 4
@@ -38,7 +39,7 @@ class AAParent(Clip):
         if down8 is True:
             self.down_8()
         if self.dfactor != 1:
-            self.clip = self.resize(self.clip, self.dw, self.dh, shift=0)
+            self.aa_clip = self.resize(self.aa_clip, self.dw, self.dh, shift=0)
         if self.clip_color_family is vs.GRAY:
             if self.clip_sample_type is not vs.INTEGER:
                 raise TypeError(MODULE_NAME + ': clip must be integer format.')
@@ -56,7 +57,13 @@ class AAParent(Clip):
 
     def down_8(self):
         self.process_depth = 8
-        self.clip = mvf.Depth(self.clip, 8)
+        self.aa_clip = mvf.Depth(self.aa_clip, 8)
+
+    def output(self, clip):
+        if self.process_depth != self.clip_bits:
+            return mvf.LimitFilter(self.clip, mvf.Depth(clip, self.clip_bits), thr=1.0, elast=2.0)
+        else:
+            return clip
 
 
 class AANnedi3(AAParent):
@@ -84,13 +91,13 @@ class AANnedi3(AAParent):
                 self.nnedi3 = self.core.nnedi3.nnedi3
 
     def out(self):
-        aaed = self.nnedi3(self.clip, field=1, dh=True, **self.nnedi3_args)
+        aaed = self.nnedi3(self.aa_clip, field=1, dh=True, **self.nnedi3_args)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, -0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.nnedi3(aaed, field=1, dh=True, **self.nnedi3_args)
         aaed = self.resize(aaed, self.clip_height, self.clip_width, -0.5)
         aaed = self.core.std.Transpose(aaed)
-        return aaed
+        return self.output(aaed)
 
 
 class AANnedi3SangNom(AANnedi3):
@@ -99,7 +106,7 @@ class AANnedi3SangNom(AANnedi3):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aaed = self.nnedi3(self.clip, field=1, dh=True, **self.nnedi3_args)
+        aaed = self.nnedi3(self.aa_clip, field=1, dh=True, **self.nnedi3_args)
         aaed = self.resize(aaed, self.clip_width, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.nnedi3(aaed, field=1, dh=True, **self.nnedi3_args)
@@ -108,7 +115,7 @@ class AANnedi3SangNom(AANnedi3):
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-        return aaed
+        return self.output(aaed)
 
 
 class AANnedi3UpscaleSangNom(AANnedi3SangNom):
@@ -142,14 +149,14 @@ class AAEedi3(AAParent):
             except AttributeError:
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
-                    self.clip = mvf.Depth(self.clip, 8)
+                    self.down_8()
         else:
             try:
                 self.eedi3 = self.core.eedi3m.EEDI3
             except AttributeError:
                 self.eedi3 = self.core.eedi3.eedi3
                 if self.process_depth > 8:
-                    self.clip = mvf.Depth(self.clip, 8)
+                    self.down_8()
 
     '''
     def build_eedi3_mask(self, clip):
@@ -162,14 +169,13 @@ class AAEedi3(AAParent):
     '''
 
     def out(self):
-        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
+        aaed = self.eedi3(self.aa_clip, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed_bits = aaed.format.bits_per_sample
-        return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
+        return self.output(aaed)
 
 
 class AAEedi3SangNom(AAEedi3):
@@ -187,7 +193,7 @@ class AAEedi3SangNom(AAEedi3):
     '''
 
     def out(self):
-        aaed = self.eedi3(self.clip, field=1, dh=True, **self.eedi3_args)
+        aaed = self.eedi3(self.aa_clip, field=1, dh=True, **self.eedi3_args)
         aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.eedi3(aaed, field=1, dh=True, **self.eedi3_args)
@@ -196,8 +202,7 @@ class AAEedi3SangNom(AAEedi3):
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-        aaed_bits = aaed.format.bits_per_sample
-        return aaed if aaed_bits == self.process_depth else mvf.Depth(aaed, self.process_depth)
+        return self.output(aaed)
 
 
 class AAEedi2(AAParent):
@@ -210,13 +215,13 @@ class AAEedi2(AAParent):
         self.nt = args.get('nt', 50)
 
     def out(self):
-        aaed = self.core.eedi2.EEDI2(self.clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
+        aaed = self.core.eedi2.EEDI2(self.aa_clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
         aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.eedi2.EEDI2(aaed, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
         aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        return aaed
+        return self.output(aaed)
 
 
 class AAEedi2SangNom(AAEedi2):
@@ -225,7 +230,7 @@ class AAEedi2SangNom(AAEedi2):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aaed = self.core.eedi2.EEDI2(self.clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
+        aaed = self.core.eedi2.EEDI2(self.aa_clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
         aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.eedi2.EEDI2(aaed, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
@@ -234,7 +239,7 @@ class AAEedi2SangNom(AAEedi2):
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-        return aaed
+        return self.output(aaed)
 
 
 class AASpline64NRSangNom(AAParent):
@@ -243,9 +248,9 @@ class AASpline64NRSangNom(AAParent):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aa_spline64 = self.core.fmtc.resample(self.clip, self.upw4, self.uph4, kernel='spline64')
+        aa_spline64 = self.core.fmtc.resample(self.aa_clip, self.upw4, self.uph4, kernel='spline64')
         aa_spline64 = mvf.Depth(aa_spline64, self.process_depth)
-        aa_gaussian = self.core.fmtc.resample(self.clip, self.upw4, self.uph4, kernel='gaussian', a1=100)
+        aa_gaussian = self.core.fmtc.resample(self.aa_clip, self.upw4, self.uph4, kernel='gaussian', a1=100)
         aa_gaussian = mvf.Depth(aa_gaussian, self.process_depth)
         aaed = self.core.rgvs.Repair(aa_spline64, aa_gaussian, 1)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
@@ -253,7 +258,7 @@ class AASpline64NRSangNom(AAParent):
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, shift=0)
-        return aaed
+        return self.output(aaed)
 
 
 class AASpline64SangNom(AAParent):
@@ -262,7 +267,7 @@ class AASpline64SangNom(AAParent):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aaed = self.core.fmtc.resample(self.clip, self.clip_width, self.uph4, kernel="spline64")
+        aaed = self.core.fmtc.resample(self.aa_clip, self.clip_width, self.uph4, kernel="spline64")
         aaed = mvf.Depth(aaed, self.process_depth)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(self.resize(aaed, self.clip_width, self.clip_height, 0))
@@ -270,7 +275,7 @@ class AASpline64SangNom(AAParent):
         aaed = mvf.Depth(aaed, self.process_depth)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(self.resize(aaed, self.clip_height, self.clip_width, 0))
-        return aaed
+        return self.output(aaed)
 
 
 class AAPointSangNom(AAParent):
@@ -282,13 +287,13 @@ class AAPointSangNom(AAParent):
         self.strength = strength  # Won't use this
 
     def out(self):
-        aaed = self.core.resize.Point(self.clip, self.upw, self.uph)
+        aaed = self.core.resize.Point(self.aa_clip, self.upw, self.uph)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
         aaed = self.resize(aaed, self.clip_width, self.clip_height, 0)
-        return aaed
+        return self.output(aaed)
 
 
 class MaskParent(Clip):
