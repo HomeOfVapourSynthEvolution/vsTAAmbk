@@ -620,17 +620,15 @@ def aa_cycle(clip, aa_class, cycle, *args, **kwargs):
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
            aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=0,
-           **args):
+           **kwargs):
     core = vs.get_core()
+
     aatypeu = aatype if aatypeu is None else aatypeu
     aatypev = aatype if aatypev is None else aatypev
-
     if mtype is None:
         mtype = 0 if preaa == 0 and True not in (aatype, aatypeu, aatypev) else 1
-
     if postaa is None:
         postaa = True if abs(sharp) > 70 or (0.4 < abs(sharp) < 1) else False
-
     if src is None:
         src = clip
     else:
@@ -681,7 +679,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         except KeyError:
             raise ValueError(MODULE_NAME + ': unknown aatype, aatypeu or aatypev.')
         aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8, opencl=opencl,
-                             opencl_device=opencl_device, **args) for plane, aa_class in zip(yuv, aa_classes)]
+                             opencl_device=opencl_device, **kwargs) for plane, aa_class in zip(yuv, aa_classes)]
         aaed_clip = core.std.ShufflePlanes(aa_clips, [0, 0, 0], vs.YUV)
     elif clip.format.color_family is vs.GRAY:
         gray = edge_enhanced_clip
@@ -689,7 +687,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             aa_class = aa_kernel[aatype]
         except KeyError:
             raise ValueError(MODULE_NAME + ': unknown aatype.')
-        aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **args)
+        aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **kwargs)
     else:
         raise ValueError(MODULE_NAME + ': Unsupported color family.')
 
@@ -725,7 +723,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                                              'Maybe resolution or bit_depth mismatch.')
     elif mtype != 0:
         if mtype == 1 or mtype is 'Canny':
-            opencl_device = args.get('opencl_device', 0)
+            opencl_device = kwargs.get('opencl_device', 0)
             mthr = 1.2 if mthr is None else mthr
             mthr2 = 8.0 if mthr2 is None else mthr2
             mask = MaskCanny(clip, sigma=mthr, t_h=mthr2, lthresh=mlthresh, mpand=mpand, opencl=opencl,
