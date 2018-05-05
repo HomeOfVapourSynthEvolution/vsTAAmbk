@@ -59,11 +59,11 @@ class AAParent(Clip):
         self.process_depth = 8
         self.aa_clip = mvf.Depth(self.aa_clip, 8)
 
-    def output(self, clip):
+    def output(self, aaed):
         if self.process_depth != self.clip_bits:
-            return mvf.LimitFilter(self.clip, mvf.Depth(clip, self.clip_bits), thr=1.0, elast=2.0)
+            return mvf.LimitFilter(self.clip, mvf.Depth(aaed, self.clip_bits), thr=1.0, elast=2.0)
         else:
-            return clip
+            return aaed
 
 
 class AANnedi3(AAParent):
@@ -609,6 +609,14 @@ def soothe(clip, src, keep=24):
     return clip_soothed
 
 
+def aa_cycle(clip, aa_class, cycle, *args, **kwargs):
+    aaed = aa_class(clip, *args, **kwargs).out()
+    if cycle <= 0:
+        return aaed
+    else:
+        return aa_cycle(aaed, aa_class, cycle - 1, *args, **kwargs)
+
+
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
            aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=0,
@@ -643,6 +651,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         edge_enhanced_clip = core.warp.AWarpSharp2(preaa_clip, depth=int(thin))
 
     aa_kernel = {
+        0: lambda clip, *args, **kwargs: type('', (), {'out': lambda: clip}),
         1: AAEedi2,
         2: AAEedi3,
         3: AANnedi3,
@@ -664,58 +673,23 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         'PointSangNom': AAPointSangNom
     }
 
-    aaed_clip = None
     if clip.format.color_family is vs.YUV:
-        y = core.std.ShufflePlanes(edge_enhanced_clip, 0, vs.GRAY)
-        u = core.std.ShufflePlanes(edge_enhanced_clip, 1, vs.GRAY)
-        v = core.std.ShufflePlanes(edge_enhanced_clip, 2, vs.GRAY)
-        if aatype != 0:
-            try:
-                y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
-                cycle_y = cycle
-                while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
-                    cycle_y -= 1
-                y = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
-            except KeyError:
-                raise ValueError(MODULE_NAME + ': unknown aatype.')
-        if aatypeu != 0:
-            try:
-                u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device,
-                                       **args).out()  # Won't do predown for u plane
-                cycle_u = cycle
-                while cycle_u > 0:
-                    u = aa_kernel[aatypeu](u, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
-                    cycle_u -= 1
-                u = mvf.Depth(u, clip.format.bits_per_sample) if down8 is True else u
-            except KeyError:
-                raise ValueError(MODULE_NAME + ': unknown aatypeu.')
-        if aatypev != 0:
-            try:
-                v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device,
-                                       **args).out()  # Won't do predown for v plane
-                cycle_v = cycle
-                while cycle_v > 0:
-                    v = aa_kernel[aatypev](v, 0, down8, opencl=opencl, opencl_device=opencl_device, **args).out()
-                    cycle_v -= 1
-                v = mvf.Depth(v, clip.format.bits_per_sample) if down8 is True else v
-            except KeyError:
-                raise ValueError(MODULE_NAME + ': unknown aatypev.')
-        aaed_clip = core.std.ShufflePlanes([y, u, v], [0, 0, 0], vs.YUV)
+        yuv = [core.std.ShufflePlanes(edge_enhanced_clip, i, vs.GRAY) for i in range(3)]
+        aatypes = [aatype, aatypeu, aatypev]
+        try:
+            aa_classes = [aa_kernel[aatype] for aatype in aatypes]
+        except KeyError:
+            raise ValueError(MODULE_NAME + ': unknown aatype, aatypeu or aatypev.')
+        aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8, opencl=opencl,
+                             opencl_device=opencl_device, **args) for plane, aa_class in zip(yuv, aa_classes)]
+        aaed_clip = core.std.ShufflePlanes(aa_clips, [0, 0, 0], vs.YUV)
     elif clip.format.color_family is vs.GRAY:
-        y = edge_enhanced_clip
-        if aatype != 0:
-            try:
-                y = aa_kernel[aatype](y, strength, down8, **args).out()
-                cycle_y = cycle
-                while cycle_y > 0:
-                    y = aa_kernel[aatype](y, strength, down8, **args).out()
-                    cycle_y -= 1
-                aaed_clip = mvf.Depth(y, clip.format.bits_per_sample) if down8 is True else y
-            except KeyError:
-                raise ValueError(MODULE_NAME + ': unknown aatype.')
-        else:
-            aaed_clip = y
+        gray = edge_enhanced_clip
+        try:
+            aa_class = aa_kernel[aatype]
+        except KeyError:
+            raise ValueError(MODULE_NAME + ': unknown aatype.')
+        aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **args)
     else:
         raise ValueError(MODULE_NAME + ': Unsupported color family.')
 
