@@ -680,7 +680,12 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         sharped_clip = aaed_clip
 
     postaa_clip = sharped_clip if postaa is False else soothe(sharped_clip, src, 24)
-    repaired_clip = postaa_clip if aarepair == 0 else core.rgvs.Repair(src, postaa_clip, aarepair)
+    if aarepair > 0:
+        repaired_clip = core.rgvs.Repair(src, postaa_clip, aarepair)
+    elif aarepair < 0:
+        repaired_clip = core.rgvs.Repair(postaa_clip, src, -aarepair)
+    else:
+        repaired_clip = postaa_clip
     stabilized_clip = repaired_clip if stabilize == 0 else temporal_stabilize(repaired_clip, src, stabilize)
 
     if mclip is not None:
@@ -724,11 +729,6 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     else:
         txt_protected_clip = masked_clip
 
-    if clip.format.bits_per_sample > 8 and down8 is True:
-        clamped_clip = mvf.LimitFilter(src, txt_protected_clip, thr=1.0, elast=2.0)
-    else:
-        clamped_clip = txt_protected_clip
-
     try:
         if showmask == -1:
             return text_mask
@@ -741,6 +741,6 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             return core.std.Interleave(
                 [core.std.ShufflePlanes([mask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
         else:
-            return clamped_clip
+            return txt_protected_clip
     except UnboundLocalError:
         raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
