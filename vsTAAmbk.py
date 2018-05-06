@@ -478,13 +478,16 @@ def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_r
     return mask
 
 
-def daa(clip, mode=-1, opencl=False):
+def daa(clip, mode=-1, opencl=False, opencl_device=-1):
     core = vs.get_core()
     if opencl is True:
         try:
-            daa_nnedi3 = core.nnedi3cl.NNEDI3CL
+            daa_nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, device=opencl_device)
         except AttributeError:
-            daa_nnedi3 = core.nnedi3.nnedi3
+            try:
+                daa_nnedi3 = core.znedi3.nnedi3
+            except AttributeError:
+                daa_nnedi3 = core.nnedi3.nnedi3
     else:
         try:
             daa_nnedi3 = core.znedi3.nnedi3
@@ -598,7 +601,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         elif clip.width != src.width or clip.height != src.height:
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
 
-    preaa_clip = clip if preaa == 0 else daa(clip, preaa, opencl)
+    preaa_clip = clip if preaa == 0 else daa(clip, preaa, opencl, opencl_device)
 
     if thin == 0 and dark == 0:
         edge_enhanced_clip = preaa_clip
