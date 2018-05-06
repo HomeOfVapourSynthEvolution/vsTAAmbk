@@ -632,7 +632,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         'Eedi2SangNom': AAEedi2SangNom,
         'Eedi3SangNom': AAEedi3SangNom,
         'Nnedi3SangNom': AANnedi3SangNom,
-        'PointSangNom': AAPointSangNom
+        'PointSangNom': AAPointSangNom,
+        'Custom': kwargs.get('aakernel', None)
     }
 
     if clip.format.color_family is vs.YUV:
@@ -640,6 +641,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         aatypes = [aatype, aatypeu, aatypev]
         try:
             aa_classes = [aa_kernel[aatype] for aatype in aatypes]
+            if None in aa_classes:
+                raise RuntimeError(MODULE_NAME + ': custom aatype: aakernel must be set.')
         except KeyError:
             raise ValueError(MODULE_NAME + ': unknown aatype, aatypeu or aatypev.')
         aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8, opencl=opencl,
@@ -649,6 +652,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         gray = edge_enhanced_clip
         try:
             aa_class = aa_kernel[aatype]
+            if aa_class is None:
+                raise RuntimeError(MODULE_NAME + ': custom aatype: aakernel must be set.')
         except KeyError:
             raise ValueError(MODULE_NAME + ': unknown aatype.')
         aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **kwargs)
