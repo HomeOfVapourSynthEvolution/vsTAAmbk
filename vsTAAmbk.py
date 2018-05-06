@@ -697,7 +697,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
                                              'Maybe resolution or bit_depth mismatch.')
     else:
         mask_kernel = {
-            0: lambda *args, **kwargs: lambda clip: clip,
+            0: lambda *args, **kwargs: lambda clip: None,
             1: mask_sobel,
             2: mask_robert,
             3: mask_prewitt,
@@ -720,8 +720,11 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         except KeyError:
             raise ValueError(MODULE_NAME + ': unknown mtype.')
         multi = ((1 << clip.format.bits_per_sample) - 1) // 255
-        mask = core.std.Expr(mask, 'x %d *' % multi, eval('vs.GRAY%d' % clip.format.bits_per_sample))
-        masked_clip = core.std.MaskedMerge(src, stabilized_clip, mask)
+        if mask is not None:
+            mask = core.std.Expr(mask, 'x %d *' % multi, eval('vs.GRAY%d' % clip.format.bits_per_sample))
+            masked_clip = core.std.MaskedMerge(src, stabilized_clip, mask)
+        else:
+            masked_clip = stabilized_clip
 
     if txtmask > 0 and clip.format.color_family is not vs.GRAY:
         text_mask = mask_fadetxt(clip, lthr=txtmask, fade_num=txtfade)
