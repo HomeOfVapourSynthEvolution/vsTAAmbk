@@ -594,15 +594,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             raise ValueError(MODULE_NAME + ': clip resolution and src resolution mismatch.')
 
     preaa_clip = clip if preaa == 0 else daa(clip, preaa, opencl, opencl_device)
-
-    if thin == 0 and dark == 0:
-        edge_enhanced_clip = preaa_clip
-    elif thin != 0 and dark != 0:
-        edge_enhanced_clip = haf.Toon(core.warp.AWarpSharp2(preaa_clip, depth=int(thin)), str=float(dark))
-    elif thin == 0:
-        edge_enhanced_clip = haf.Toon(preaa_clip, str=float(dark))
-    else:
-        edge_enhanced_clip = core.warp.AWarpSharp2(preaa_clip, depth=int(thin))
+    edge_enhanced_clip = (thin != 0 and core.warp.AWarpSharp2(preaa_clip, depth=int(thin)) or preaa_clip)
+    edge_enhanced_clip = (dark != 0 and haf.Toon(edge_enhanced_clip, str=float(dark)) or edge_enhanced_clip)
 
     aa_kernel = {
         0: lambda clip, *args, **kwargs: type('', (), {'out': lambda: clip}),
@@ -670,12 +663,12 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     stabilized_clip = repaired_clip if stabilize == 0 else temporal_stabilize(repaired_clip, src, stabilize)
 
     if mclip is not None:
-        mask = mclip
         try:
-            masked_clip = core.std.MaskedMerge(src, stabilized_clip, mask, first_plane=True)
+            masked_clip = core.std.MaskedMerge(src, stabilized_clip, mclip, first_plane=True)
+            masker = type('', (), {'__call__': lambda *args, **kwargs: mclip})()
         except vs.Error:
-            raise RuntimeError(MODULE_NAME + ': Something wrong with your mclip. '
-                                             'Maybe format, resolution or bit_depth mismatch.')
+            raise RuntimeError(
+                MODULE_NAME + ': Something wrong with your mclip. Maybe format, resolution or bit_depth mismatch.')
     else:
         # Use lambda for lazy evaluation
         mask_kernel = {
@@ -709,22 +702,14 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         text_mask = mask_fadetxt(clip, lthr=txtmask, fade_num=txtfade)
         txt_protected_clip = core.std.MaskedMerge(masked_clip, src, text_mask, first_plane=True)
     else:
+        text_mask = src
         txt_protected_clip = masked_clip
 
-    try:
-        if showmask == -1:
-            return text_mask
-        elif showmask == 1:
-            return masker(None, src, show=True)
-        elif showmask == 2:
-            return core.std.StackVertical(
-                [core.std.ShufflePlanes([masker(None, src, show=True), core.std.BlankClip(src)], [0, 1, 2], vs.YUV),
-                 src])
-        elif showmask == 3:
-            return core.std.Interleave(
-                [core.std.ShufflePlanes([masker(None, src, show=True), core.std.BlankClip(src)], [0, 1, 2], vs.YUV),
-                 src])
-        else:
-            return txt_protected_clip
-    except UnboundLocalError:
-        raise RuntimeError(MODULE_NAME + ': No mask to show if you don\'t have one.')
+    final_output = ((showmask == -1 and text_mask) or
+                    (showmask == 1 and masker(None, src, show=True)) or
+                    (showmask == 2 and core.std.StackVertical([core.std.ShufflePlanes([masker(None, src, show=True),
+                                                               core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])) or
+                    (showmask == 3 and core.std.Interleave([core.std.ShufflePlanes([masker(None, src, show=True),
+                                                           core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])) or
+                    txt_protected_clip)
+    return final_output
