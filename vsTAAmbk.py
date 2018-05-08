@@ -408,21 +408,25 @@ def mask_msharpen(mthr, **kwargs):
 
 def mask_lthresh(clip, mthrs, lthreshes, mask_kernel, inexpand, **kwargs):
     core = vs.get_core()
+    gray8 = mvf.Depth(clip, 8) if clip.format.bits_per_sample != 8 else clip
+    gray8 = core.std.ShufflePlanes(gray8, 0, vs.GRAY) if clip.format.color_family != vs.GRAY else gray8
     mthrs = mthrs if isinstance(mthrs, (list, tuple)) else [mthrs]
     lthreshes = lthreshes if isinstance(lthreshes, (list, tuple)) else [lthreshes]
     inexpand = inexpand if isinstance(inexpand, (list, tuple)) and len(inexpand) >= 2 else [inexpand, 0]
+
     mask_kernels = [mask_kernel(mthr, **kwargs) for mthr in mthrs]
-    masks = [kernel(clip) for kernel in mask_kernels]
-    if len(mthrs) - len(lthreshes) == 1:
-        mask = functools.reduce(lambda x, y: core.std.Expr([x, y, clip], 'z %d < x y ?'
-                                % lthreshes[masks.index(y) - 1]), masks)
-    else:
-        mask = masks[0]
-    for i in range(inexpand[0]):
-        mask = core.std.Maximum(mask)
-    for i in range(inexpand[1]):
-        mask = core.std.Minimum(mask)
-    return mask
+    masks = [kernel(gray8) for kernel in mask_kernels]
+    mask = ((len(mthrs) - len(lthreshes) == 1) and functools.reduce(
+        lambda x, y: core.std.Expr([x, y, gray8], 'z %d < x y ?' % lthreshes[masks.index(y) - 1]), masks)) or masks[0]
+    mask = [mask] + [core.std.Maximum] * inexpand[0]
+    mask = functools.reduce(lambda x, y: y(x), mask)
+    mask = [mask] + [core.std.Minimum] * inexpand[1]
+    mask = functools.reduce(lambda x, y: y(x), mask)
+
+    bps = clip.format.bits_per_sample
+    mask = (bps > 8 and core.std.Expr(mask, 'x %d *' % (((1 << clip.format.bits_per_sample) - 1) // 255),
+                                      eval('vs.GRAY' + str(bps)))) or mask
+    return lambda clip_a, clip_b, show=False: (show is False and core.std.MaskedMerge(clip_a, clip_b, mask)) or mask
 
 
 def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_range=None):
@@ -446,8 +450,8 @@ def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_r
     cthr_v = cthr if not isinstance(cthr, (list, tuple)) else cthr[1]
     expr = 'x %d > y %d - abs %d < and z %d - abs %d < and %d 0 ?' % (lthr, neutral, cthr_u, neutral, cthr_v, ceil)
     mask = core.std.Expr(yuv444, expr)
-    for i in range(expand):
-        mask = core.std.Maximum(mask)
+    mask = [mask] + [core.std.Maximum] * expand
+    mask = functools.reduce(lambda x, y: y(x), mask)
 
     if fade_num is not 0:
         def shift_backward(n, mask_clip, num):
@@ -696,35 +700,33 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             raise RuntimeError(MODULE_NAME + ': Something wrong with your mclip. '
                                              'Maybe resolution or bit_depth mismatch.')
     else:
+        # Use lambda for lazy evaluation
         mask_kernel = {
-            0: lambda *args, **kwargs: lambda clip: None,
-            1: mask_sobel,
-            2: mask_robert,
-            3: mask_prewitt,
-            4: mask_tedge,
-            5: mask_canny_continuous,
-            6: mask_msharpen,
-            'Sobel': mask_sobel,
-            'Canny': mask_canny_binarized,
-            'Prewitt': mask_prewitt,
-            'Robert': mask_robert,
-            'TEdge': mask_tedge,
-            'Canny_Old': mask_canny_continuous,
-            'MSharpen': mask_msharpen,
+            0: lambda: lambda a, b, *args, **kwargs: b,
+            1: lambda: mask_lthresh(clip, mthr, mlthresh, mask_sobel, mpand, opencl=opencl,
+                                    opencl_device=opencl_device, **kwargs),
+            2: lambda: mask_lthresh(clip, mthr, mlthresh, mask_robert, mpand, **kwargs),
+            3: lambda: mask_lthresh(clip, mthr, mlthresh, mask_prewitt, mpand, **kwargs),
+            4: lambda: mask_lthresh(clip, mthr, mlthresh, mask_tedge, mpand, **kwargs),
+            5: lambda: mask_lthresh(clip, mthr, mlthresh, mask_canny_continuous, mpand, opencl=opencl,
+                                    opencl_device=opencl_device, **kwargs),
+            6: lambda: mask_lthresh(clip, mthr, mlthresh, mask_msharpen, mpand, **kwargs),
+            'Sobel': lambda: mask_lthresh(clip, mthr, mlthresh, mask_sobel, mpand, opencl=opencl,
+                                          opencl_device=opencl_device, **kwargs),
+            'Canny': lambda: mask_lthresh(clip, mthr, mlthresh, mask_canny_binarized, mpand, opencl=opencl,
+                                          opencl_device=opencl_device, **kwargs),
+            'Prewitt': lambda: mask_lthresh(clip, mthr, mlthresh, mask_prewitt, mpand, **kwargs),
+            'Robert': lambda: mask_lthresh(clip, mthr, mlthresh, mask_robert, mpand, **kwargs),
+            'TEdge': lambda: mask_lthresh(clip, mthr, mlthresh, mask_tedge, mpand, **kwargs),
+            'Canny_Old': lambda: mask_lthresh(clip, mthr, mlthresh, mask_canny_continuous, mpand, opencl=opencl,
+                                              opencl_device=opencl_device, **kwargs),
+            'MSharpen': lambda: mask_lthresh(clip, mthr, mlthresh, mask_msharpen, mpand, **kwargs),
+            'Unknown': lambda: exec('raise ValueError(MODULE_NAME + ": unknown mtype")')
         }
         mtype = 5 if mtype is None else mtype
         mthr = (24,) if mthr is None else mthr
-        try:
-            mask = mask_lthresh(mvf.GetPlane(mvf.Depth(clip, 8), 0), mthr, mlthresh,
-                                mask_kernel[mtype], mpand, opencl=opencl, opencl_device=opencl_device, **kwargs)
-        except KeyError:
-            raise ValueError(MODULE_NAME + ': unknown mtype.')
-        multi = ((1 << clip.format.bits_per_sample) - 1) // 255
-        if mask is not None:
-            mask = core.std.Expr(mask, 'x %d *' % multi, eval('vs.GRAY%d' % clip.format.bits_per_sample))
-            masked_clip = core.std.MaskedMerge(src, stabilized_clip, mask)
-        else:
-            masked_clip = stabilized_clip
+        masker = mask_kernel.get(mtype, mask_kernel['Unknown'])()
+        masked_clip = masker(src, stabilized_clip)
 
     if txtmask > 0 and clip.format.color_family is not vs.GRAY:
         text_mask = mask_fadetxt(clip, lthr=txtmask, fade_num=txtfade)
@@ -736,13 +738,15 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         if showmask == -1:
             return text_mask
         elif showmask == 1:
-            return mask
+            return masker(None, src, show=True)
         elif showmask == 2:
             return core.std.StackVertical(
-                [core.std.ShufflePlanes([mask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
+                [core.std.ShufflePlanes([masker(None, src, show=True), core.std.BlankClip(src)], [0, 1, 2], vs.YUV),
+                 src])
         elif showmask == 3:
             return core.std.Interleave(
-                [core.std.ShufflePlanes([mask, core.std.BlankClip(src)], [0, 1, 2], vs.YUV), src])
+                [core.std.ShufflePlanes([masker(None, src, show=True), core.std.BlankClip(src)], [0, 1, 2], vs.YUV),
+                 src])
         else:
             return txt_protected_clip
     except UnboundLocalError:
