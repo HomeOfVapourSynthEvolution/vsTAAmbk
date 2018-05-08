@@ -484,33 +484,24 @@ def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_r
 
 def daa(clip, mode=-1, opencl=False, opencl_device=-1):
     core = vs.get_core()
-    if opencl is True:
-        try:
-            daa_nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, device=opencl_device)
-        except AttributeError:
-            try:
-                daa_nnedi3 = core.znedi3.nnedi3
-            except AttributeError:
-                daa_nnedi3 = core.nnedi3.nnedi3
-    else:
-        try:
-            daa_nnedi3 = core.znedi3.nnedi3
-        except AttributeError:
-            daa_nnedi3 = core.nnedi3.nnedi3
+    nnedi3_attr = ((opencl is True and getattr(core, 'nnedi3cl', getattr(core, 'znedi3', getattr(core, 'nnedi3'))))
+                   or getattr(core, 'znedi3', getattr(core, 'nnedi3')))
+    nnedi3 = (hasattr(nnedi3_attr, 'NNEDI3CL') and nnedi3_attr.NNEDI3CL) or nnedi3_attr.nnedi3
+    nnedi3 = (nnedi3.name == 'NNEDI3CL' and functools.partial(nnedi3, device=opencl_device)) or nnedi3
     if mode == -1:
-        nn = daa_nnedi3(clip, field=3)
-        nnt = daa_nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
+        nn = nnedi3(clip, field=3)
+        nnt = nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
         clph = core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0),
                               core.std.SelectEvery(nn, cycle=2, offsets=1))
         clpv = core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0),
                               core.std.SelectEvery(nnt, cycle=2, offsets=1))
         clp = core.std.Merge(clph, clpv)
     elif mode == 1:
-        nn = daa_nnedi3(clip, field=3)
+        nn = nnedi3(clip, field=3)
         clp = core.std.Merge(core.std.SelectEvery(nn, cycle=2, offsets=0),
                              core.std.SelectEvery(nn, cycle=2, offsets=1))
     elif mode == 2:
-        nnt = daa_nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
+        nnt = nnedi3(core.std.Transpose(clip), field=3).std.Transpose()
         clp = core.std.Merge(core.std.SelectEvery(nnt, cycle=2, offsets=0),
                              core.std.SelectEvery(nnt, cycle=2, offsets=1))
     else:
