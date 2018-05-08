@@ -570,10 +570,7 @@ def soothe(clip, src, keep=24):
 
 def aa_cycle(clip, aa_class, cycle, *args, **kwargs):
     aaed = aa_class(clip, *args, **kwargs).out()
-    if cycle <= 0:
-        return aaed
-    else:
-        return aa_cycle(aaed, aa_class, cycle - 1, *args, **kwargs)
+    return aaed if cycle <= 0 else aa_cycle(aaed, aa_class, cycle - 1, *args, **kwargs)
 
 
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
@@ -628,29 +625,22 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         'Eedi3SangNom': AAEedi3SangNom,
         'Nnedi3SangNom': AANnedi3SangNom,
         'PointSangNom': AAPointSangNom,
-        'Custom': kwargs.get('aakernel', None)
+        'Unknown': lambda clip, *args, **kwargs: type('', (), {
+            'out': lambda: exec('raise ValueError(MODULE_NAME + ": unknown aatype, aatypeu or aatypev")')}),
+        'Custom': kwargs.get('aakernel', lambda clip, *args, **kwargs: type('', (), {
+            'out': lambda: exec('raise RuntimeError(MODULE_NAME + ": custom aatype: aakernel must be set.")')})),
     }
 
     if clip.format.color_family is vs.YUV:
         yuv = [core.std.ShufflePlanes(edge_enhanced_clip, i, vs.GRAY) for i in range(clip.format.num_planes)]
         aatypes = [aatype, aatypeu, aatypev]
-        try:
-            aa_classes = [aa_kernel[aatype] for aatype in aatypes]
-            if None in aa_classes:
-                raise RuntimeError(MODULE_NAME + ': custom aatype: aakernel must be set.')
-        except KeyError:
-            raise ValueError(MODULE_NAME + ': unknown aatype, aatypeu or aatypev.')
+        aa_classes = [aa_kernel.get(aatype, aa_kernel['Unknown']) for aatype in aatypes]
         aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8, opencl=opencl,
                              opencl_device=opencl_device, **kwargs) for plane, aa_class in zip(yuv, aa_classes)]
         aaed_clip = core.std.ShufflePlanes(aa_clips, [0, 0, 0], vs.YUV)
     elif clip.format.color_family is vs.GRAY:
         gray = edge_enhanced_clip
-        try:
-            aa_class = aa_kernel[aatype]
-            if aa_class is None:
-                raise RuntimeError(MODULE_NAME + ': custom aatype: aakernel must be set.')
-        except KeyError:
-            raise ValueError(MODULE_NAME + ': unknown aatype.')
+        aa_class = aa_kernel.get(aatype, aa_kernel['Unknown'])
         aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **kwargs)
     else:
         raise ValueError(MODULE_NAME + ': Unsupported color family.')
@@ -675,12 +665,8 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         sharped_clip = aaed_clip
 
     postaa_clip = sharped_clip if postaa is False else soothe(sharped_clip, src, 24)
-    if aarepair > 0:
-        repaired_clip = core.rgvs.Repair(src, postaa_clip, aarepair)
-    elif aarepair < 0:
-        repaired_clip = core.rgvs.Repair(postaa_clip, src, -aarepair)
-    else:
-        repaired_clip = postaa_clip
+    repaired_clip = ((aarepair > 0 and core.rgvs.Repair(src, postaa_clip, aarepair)) or
+                     (aarepair < 0 and core.rgvs.Repair(postaa_clip, src, -aarepair)) or postaa_clip)
     stabilized_clip = repaired_clip if stabilize == 0 else temporal_stabilize(repaired_clip, src, stabilize)
 
     if mclip is not None:
@@ -689,7 +675,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
             masked_clip = core.std.MaskedMerge(src, stabilized_clip, mask, first_plane=True)
         except vs.Error:
             raise RuntimeError(MODULE_NAME + ': Something wrong with your mclip. '
-                                             'Maybe resolution or bit_depth mismatch.')
+                                             'Maybe format, resolution or bit_depth mismatch.')
     else:
         # Use lambda for lazy evaluation
         mask_kernel = {
