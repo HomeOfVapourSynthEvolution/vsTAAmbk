@@ -1,4 +1,4 @@
-# vsTAAmbk 0.7.6
+# vsTAAmbk 0.8.0
 An Anti-aliasing script ported from Avisynth  
 For more details NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
@@ -85,9 +85,9 @@ For more details please visit our threads in NMM-HD Forum.
 	If mclip is set, script won't build another one. And you should take care of
 	mask's resolution, bit-depth, format, etc by yourself.<br />
 
-* *mthr*, *mthr2*:<br />
-    Parameters of mask.<br />
-    Meaning of them depends on particular mtype.<br />
+* *mthr*:<br />
+    Size of the mask.<br />
+    The smaller value you give, the bigger mask you will get.<br />
 
 * *mlthresh*: (Default None)<br />
     Set luma thresh for n-pass mask.<br />
@@ -147,8 +147,8 @@ For more details please visit our threads in NMM-HD Forum.
     0: Normal output; 1: Mask only; 2: tack mask and clip; 3: Interleave mask and clip; -1: Text mask only<br />
 
 * *opencl*: (Default: False)<br />
-    Whether use opencl to accelarate processing.<br />
-    Currently there are two processings can use opencl:<br />
+    Whether use opencl version of some plugins.<br />
+    Currently there are three plugins can use opencl:<br />
     * TCannyCL
     * EEDI3CL
     * NNEDI3CL
