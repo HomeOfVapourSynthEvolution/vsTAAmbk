@@ -1,0 +1,547 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>vsTAAmbk User Reference Manual</title>
+<style type="text/css">
+<!--
+body {
+	font-family: "微软雅黑", "宋体-PUA", "新宋体", "宋体", Verdana, Arial, Helvetica, sans-serif;
+	background-color: #C8D4D8;
+	font-size: 12pt;
+	line-height: 18pt;
+	color: #000000;
+	text-align: justify;
+	margin-right: 20px;
+	margin-left: 20px;
+}
+pre {
+	font-size: 12px;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	background-color: #B9D7EC;
+	padding-left: 12px;
+	padding-top: 12px;
+	padding-right: 12px;
+	padding-bottom: 12px;
+	border: #006699;
+	border-style: solid;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+}
+a:link {
+	color: #006699;
+	text-decoration: none;
+}
+a:visited {
+	color: #006699;
+	text-decoration: none;
+}
+a:hover {
+	color: #FF6600;
+	text-decoration: none;
+}
+a:active {
+	color: #006699;
+	text-decoration: none;
+}
+.hlight {
+	color: #003399;
+	font-weight: bold;
+}
+-->
+</style>
+</head>
+<body>
+<font size="5"><strong>vsTAAmbk User Reference Manual</strong></font><br />
+<p>
+  Author: povsister, kewenyu / Version: 0.8.0 / Enviroment: VapourSynth R28 above<br />
+  License：GPLv3 / Documentation License：CC BY-NC-SA 3.0<br />
+  Release: <a href="https://github.com/HomeOfVapourSynthEvolution/vsTAAmbk" target="_blank">https://github.com/HomeOfVapourSynthEvolution/vsTAAmbk</a> (Github)<br />
+  Discussion：<a href="https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666">https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666 </a>(NMM-HD Forum)
+</p>
+<hr>
+<strong>Introduction</strong> <br />
+vsTAAmbk is an Anti-Aliasing Script ported from Avisynth's TAA/TAAmbk, which is modified according to actual usage and features in VapourSynth.<br />
+Most of its parameters is compatible with orginal TAA/TAAmbk. It has following features:
+<ul>
+  <li>Support 8bit, 10bit and 16bit gray, yuv420p, yuv422p and yuv444p input</li>
+  <li>10 built-in anti-aliasing kernels, with the ability to use your custom anti-aliasing kernel</li>
+  <li>6 built-in mask types, with the ability to use your custom anti-aliasing kernel</li>
+  <li>Included several pre-process and post process such as preaa, postaa, stabilize, etc</li>
+  <li>Adaptive plugin selection which will automatically use optional plugin to improve speed</li>
+</ul>
+<hr>
+<strong>Dependent Plugins and Scripts</strong>
+<ul>
+  <li>Required Plugins</li>
+  <ul>
+  	<li><a href="https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI2">EEDI2</a></li>
+    <li><a href="https://github.com/dubhater/vapoursynth-nnedi3">nnedi3</a></li>
+    <li><a href="https://github.com/dubhater/vapoursynth-mvtools">mvtools</a></li>
+    <li><a href="https://github.com/EleonoreMizo/fmtconv">fmtconv</a></li>
+    <li><a href="https://bitbucket.org/James1201/vapoursynth-sangnom/overview">SangNom</a></li>
+    <li><a href="https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TCanny">TCanny</a></li>
+    <li><a href="https://github.com/dubhater/vapoursynth-msmoosh">msmoosh</a></li>
+  </ul>
+  <li>Required Scripts</li>
+  <ul>
+  	<li><a href="https://github.com/HomeOfVapourSynthEvolution/havsfunc">havsfunc</a></li>
+    <li><a href="https://github.com/HomeOfVapourSynthEvolution/mvsfunc">mvsfunc</a></li>
+  </ul>
+  <li>Optional Plugins</li>
+  <ul>
+  	<li><a href="https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3">eedi3m</a>, as the replacement of eedi3 in VapourSynth source-tree</li>
+    <li><a href="https://github.com/sekrit-twc/znedi3">znedi3</a>, as the replacement of nnedi3</li>
+    <li><a href="https://github.com/HomeOfVapourSynthEvolution/VapourSynth-NNEDI3CL">nnedi3cl</a>, as the replacement of nnedi3cl when opencl=True</li>
+  </ul>
+</ul>
+<hr>
+<strong>Syntax</strong>
+<ul>
+  <li>Main Function：<br>
+    <pre>import vsTAAmbk as taa
+aa = taa.TAAmbk(clip, clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
+           mthr=None, mthr2=None, mlthresh=None, mpand=(1, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
+           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=0, **kwargs)</pre>
+  </li>
+</ul>
+<hr>
+<strong>Parameters</strong><br>
+<ul>
+  <li><span class="hlight">clip</span><br>
+    Input clip. Support 8bit, 10bit, 16bit gray, yuv420p, yuv422p and yuv444p input.<br />
+    <br>
+  </li>
+  <li><span class="hlight">aatype</span> (int or string, default:1)<br>
+  	Main anti-aliasing kernel type. All available aatypes are list in the table below：
+    <table border="1">
+      <tr>
+      	<th>AAtype</th>
+        <th>Performance</th>
+        <th>Optional additional parameters</th>
+        <th>Remark</th>
+      </tr>
+      <tr>
+      	<th>Eedi2(aatype=1)</th>
+        <th>Medium strength, normal speed, good quality</th>
+        <th>mtrhesh=10, lthresh=20, vthresh=20</th>
+        <th>Recommended for normal usage</th>
+      </tr>
+      <tr>
+      	<th>Eedi3(aatype=2)</th>
+        <th>Strong strength, very slow speed, good quality</th>
+        <th>alpha=0.5, beta=0.2, gamma=20, nrad=3, mdis=30</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+      	<th>Nnedi3(aatype=3)</th>
+        <th>Weak strength, medium speed, good quality</th>
+        <th>nsize=3, nns=1, qual=2</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+      	<th>Nnedi3UpscaleSangNom(aatype=4)</th>
+        <th>Mid-strong strength, normal speed, medium destruction</th>
+        <th>nsize=1, nns=3, qual=2, aa=48</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+      	<th>Spline64NrSangNom(aatype=5)</th>
+        <th>Mid-strong strength, fast speed, strong destruction</th>
+        <th>aa=48</th>
+        <th></th>
+      </tr>
+      <tr>
+      	<th>Spline64SangNom(aatype=6）</th>
+        <th>Mid-strong strength, fast speed, strong destruction</th>
+        <th>aa=48</th>
+        <th></th>
+      </tr>
+      <tr>
+      	<th>Eedi2SangNom(aatype=-1)</th>
+        <th>Strong strength, normal speed, normal destruction</th>
+        <th>mtrhesh=10, lthresh=20, vthresh=20, aa=48</th>
+        <th></th>
+      </tr>
+      <tr>
+      	<th>Eedi3SangNom(aatype=-2）</th>
+        <th>Very strong strength, very slow speed, normal destruction</th>
+        <th>alpha=0.5, beta=0.2, gamma=20, nrad=3, mdis=30, aa=48</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+      	<th>Nnedi3SangNom(aatype=-3)</th>
+        <th>Strong strength, normal speed, normal destruction</th>
+        <th>nsize=3, nns=1, qual=2, aa=48</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+      	<th>PointSangNom</th>
+        <th>Medium strength, very fast speed, strong destruction</th>
+        <th>aa=48</th>
+        <th></th>
+      </tr>
+      <tr>
+        <th>Custom</th>
+        <th></th>
+        <th>aakernel=YourCustomAAKernel</th>
+        <th>Use your custom anti-aliasing kernel</th>
+      </tr>
+    </table>
+    <br />
+    <ul>
+      <li><strong>The value</strong>: aatype can be specified by name (string), but also can be specified by aatype=-3~6 (integer) in the way of old TAA.</li>
+      <li>
+        <strong>Additional parameters</strong>: from left to right it map to p1~p6 in old TAA.<br />
+        These parameters are not directly link to strength of anti-aliasing. If you don't understand the exact meaning of these parameters, please use default values. Default values        has good enough performance.<br />
+        In TAAmbk, you must specify the name of these parameters and can not use p1~p6 to specify them.
+      </li>
+      <li>
+        <strong>OpenCL</strong>: Some of aatypes use plugins which has an opencl version. If you already load these OpenCl plugins and enable opencl=True, TAAmbk will automatically use         opencl version of these plugins.<br />
+        Note: if you enable opencl=True but did't load the opencl version plugin, TAAmbk will use non-opencl plugin automatically and will not raise an exception.
+      </li>
+      <li>
+        <strong>Tradeoff</strong>: use a strong-strength aatype may give you a strong anti-aliased result but in very slow speed. But select a not so strong but faster aatype and set         proper value of cycle and strength may give same result but in much more faster speed.<br />
+        Eg.1: use aatype='Eedi3' is very slow. But use aatype='Eedi2' with cycle=2 may have same strength of anti-aliasing but is much more faster than aatype='Eedi3'.<br />
+        Eg.2: use aatype='Eedi2SangNom' will give you strong anti-aliased result. But use aatype='Eedi2' with cycle=1 and strength=0.2 may give you the same strength of result and don't        have artifacts introduced by SangNom.
+      </li>
+      <li><strong>SangNom</strong>: SangNom may introduced some artifacts at the edge. So it's recommended to use aarepair to eliminate these potential artifacts.</li>
+      <li>
+        <strong>Custom AA Kernel</strong>: In this mode you can specify your custom anti-aliasing kernel by setting the aakerel parameter. The custom aakernel must be the sub-class of        AAParent. This feature require knowledge of programming and experience of video processing. Only experiened users are recommend to use this feature.
+      </li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">aatypeu, aatypev</span> (int or string, default： same as aatype)<br>
+  	If the format of the input clip is YUV, you can specify the aatype for U, V planes separately by using this two parameters.<br />
+    If you don't need to process U, V planes, you can set them to 0 to improve speed.<br />
+    <br />
+  </li>
+  <li><span class="hlight">strength</span> (float, default: 0.0)<br />
+    The strength of predown. Valid range is 0.0~0.5. Value over 0.5 will be limit to 0.5. 0 means don't use predown.
+    <ul>
+      <li><strong>Predown</strong>: By downscaling the clip and upscaing it with main aa kernel, this feature can be use to deal with aliasing causing by poor upscaling.</li>
+      <li><strong>Automatically disable</strong>: Some of aa kernel is unsuitable to upscale clip(eg. PointSangNom). predown will be disable automatically when using these aatype.</li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">preaa</span> (int, default: 0)<br />
+    preaa is basically an simplified version of daa and can be used to handle aliasing and residual comb causing by poor deinterlacing and IVTC<br />
+    <ul>
+      <li><strong>0</strong>: don't use preaa</li>
+      <li><strong>1</strong>: use preaa in vertical direction</li>
+      <li><strong>2</strong>: use preaa in horizontal direction</li>
+      <li><strong>-1</strong>: use preaa in botrh direction</li>
+      <br />
+    </ul>
+  </li>
+  <li><span class="hlight">cycle</span> (int, default: 0)<br />
+    Set the num of loops of main aa kernel. It's useful for handling intensive aliasing and 3D aliasing.<br />
+    <br />
+  </li>
+  <li><span class="hlight">down8</span> (bool, default: False)<br />
+    Set whether convert the clip to 8bit before applying main aa kernel and convert it to original bit depth after main aa process to improve speed.<br />
+    Because the pixel change in aa process is huge, it's unlikely to get banding in low bit depth.<br />
+    <br />
+  </li>
+  <li><span class="hlight">mtype</span> (int or string, default: 5)<br />
+    Mask type. All available mask types are list in the table below:
+    <table border="1">
+      <tr>
+        <th>Mask type</th>
+        <th>Additional parameters</th>
+        <th>Remark</th>
+      </tr>
+      <tr>
+        <th>Sobel(mtype=1)</th>
+        <th>gmmax, sigma=1.0, t_h=8.0, t_l=1.0</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+        <th>Robert(mtype=2)</th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th>Prewitt(mtype=3)</th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th>TEdge(mtype=4)</th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th>Canny_Old(mtype=5)</th>
+        <th>sigma, t_h=8.0, t_l=1.0</th>
+        <th>Support OpenCL</th>
+      </tr>
+      <tr>
+        <th>MSharpen(mtype=6)</th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th>Canny</th>
+        <th>sigma, t_h=8.0, t_l=1.0</th>
+        <th>Support OpenCL</th>
+      </tr>
+    </table>
+    <br />
+    <ul>
+      <li><strong>The Value</strong>: mtype can be specified by the name. You can also specify them by mtype=0~6 in the way of old TAA.</li>
+      <li><strong>Additional parameters</strong>: some of these additional parameters will be calculated by TAAmbk according to mthr. You can specify them to override the calculated          value.</li>
+      <li>
+      <strong>OpenCL</strong>:Some of mtypes use plugins which has an opencl version. If you already load these OpenCl plugins and enable opencl=True, TAAmbk will automatically use         opencl version of these plugins.<br />
+        Note: if you enable opencl=True but did't load the opencl version plugin, TAAmbk will use non-opencl plugin automatically and will not raise an exception.
+      </li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">mthr</span> (int, tuple or list, default: 24)<br />
+    The size of mask. Valid range is 1~255. The smaller mthr you give, the bigger mask you will get.<br />
+    If the mlthresh is specified, then the mthr must be a tuple or list.<br />
+    <br />
+  </li>
+  <li><span class="hlight">mclip</span> (vs.VideoNode. default: None)<br />
+    Set your own mask clip. Note: you should make sure the mclip has same format, resolution and bit depth with source clip.<br />
+    <br />
+  </li>
+  <li><span class="hlight">mlthresh</span> (int, tuple or list. default: None)<br />
+    Set different mthr value for different luma range by giving a tuple or list of luma range.<br />
+    Some of mtype has the difficult to mask edge in dark scence. This problem can be solved by setting smaller mthr in dark scence and larger mthr in bright scence.<br />
+    <br />
+  </li>
+  <li><span class="hlight">mpand</span> (int, tuple or list. default: [1, 0])<br />
+    Set the num of loop of mask expanding and inpanding. If the value is integer, the mask will be expanded only; if the value is a tuple or list, the mask will be expanded first and then be inpanded.<br />
+    <br />
+  </li>
+  <li><span class="hlight">txtmask</span> (int, default: 0)<br />
+    Text mask. The value is the luma thresh of the mask. Only white area whose luma value is larger than luma thresh will be considered as a text area.<br />
+    This feature is to protect white text (such as staff list in OP/ED) from being blurred by anti-aliasing<br />
+    <br />
+  </li>
+  <li><span class="hlight">txtfade</span> (int, default: 0)<br />
+    Protect fading white text. The value is the fading frame nums. You can specify fade-in and fade-out frame nums separately by giving a tuple or list.<br />
+    Because the luma value of the fading text can't reach luma thresh set by txtmask, this feature stretch the txtmask on time domain for several frames to protect these fading text.<br />
+    <br />
+  </li>
+  <li><span class="hlight">thin</span> (int, default: 0)<br />
+    Warp the line by aWarpSharp2 before main aa process.<br />
+    <br />    
+  </li>
+  <li><span class="hlight">dark</span> (float, default: 0.0)<br />
+    Darken the line by Toon before main aa process.<br />
+    <br />    
+  </li>
+  <li><span class="hlight">sharp</span> (float or int, default: 0)<br />
+    Sharpen mode<br />
+    <ul>
+      <li><strong>0</strong>: No sharpen</li>
+      <li><strong>1~inf</strong>: Use Lsfmod(default="old")</li>
+      <li><strong>0~1</strong>: Use sharpener similar to Avisynth's Sharpen()</li>
+      <li><strong>-1~0</strong>: Use Lsfmod(default="fast")</li>
+      <li><strong>-1</strong>: Use Contra-Sharpen for compensatory sharpening</li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">aarepair</span> (int, default: 0)<br />
+    Use repair to eliminate artifacts and limit the aa strength on spaitial domain.<br />
+    The value represent the mode of repair. Valid range is -24~24. It behave like repair(src, aa, mode) when the value is postive and repair(aa, src, mode) when the value is negative.<br />
+    Use mode 1~4 can eliminate artifacts causing by SangNom; Use mode -20 can protect sharp text from being blurred.<br />
+    <br />
+  </li>
+  <li><span class="hlight">postaa</span> (bool, default: False)<br />
+    Set whether use Soothe to prevent aliasing causing by sharpening.<br />
+    <br />
+  </li>
+  <li><span class="hlight">stabilize</span> (int, default: 0)<br />
+    Set whether use mvtools to stabilize the aa result to and limit it on time domain.<br />
+    Valid range is 0~3. Larger value will give you better stabilization.<br />
+    <br />
+  </li>
+  <li><span class="hlight">src</span> (vs.VideoNode, default: same as clip)<br />
+    Specify the src clip for sharpening, repairing and mask merging.<br />
+    <br />
+  </li>
+  <li><span class="hlight">showmask</span> (int, default: 0)<br />
+    Debug purpose. show the mask created by TAAmbk.<br />
+    <ul>
+      <li><strong>0</strong>: normal output</li>
+      <li><strong>1</strong>: output the mask</li>
+      <li><strong>2</strong>: stack the mask and clip</li>
+      <li><strong>3</strong>: interleave the mask and clip</li>
+      <li><strong>-1</strong>: output txtmask</li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">opencl</span> (bool, default: False)<br />
+    Set whether use plugins which support opencl. Currently there are following plugins which support OpenCL：
+    <ul>
+      <li>TCannyCL</li>
+      <li>NNEDI3CL</li>
+      <li>EEDI3CL</li>
+    </ul>
+    <br />
+  </li>
+  <li><span class="hlight">opencl_device</span> (int, default:-1)<br />
+    Set opencl device id. -1 means automatic choice.<br />
+    <br />
+  </li>
+  <li><span class="hlight">**kwargs</span> (dict）<br />
+    A dict which is used to collect additional parameters.<br />
+    <br />
+  </li>
+</ul>
+<hr>
+<strong>Usage and Example</strong>
+<ul>
+  <li>Normal procedure<br>
+    <ol>
+      <li>Determine whether use parameter "preaa" according to whether the source has aliasing or residual comb causing by deinterlacing.</li>
+      <li>Determine whether use pre-process such as thin and dark according to your own favor.</li>
+      <li>According to the intensity of the aliasing, select an aatype as weak as possible. The strength and speed of the aatype sholud be considered.</li>
+      <li>Turn off all post process and mask. Observe whether all aliasing is eliminated.</li>
+      <li>If aliasing is not eliminated completely, select a stronger aatype or adjust the parameter "strength" and parameter "cycle" and other additional parameters.</li>
+      <li>If aliasing is eliminated competely, select a proper mtype and use parameter "showmask" to observer the mask.</li>
+      <li>Adjust mthr, mlthresh and additional parameters to make the mask cover all edge while not to cover non-edge area.</li>
+      <li>Turn off showmask and observer whether other artifacts exist. If there are artifacts, use parameter "aarepair" and parameter "stabilize" to eliminate them.</li>
+      <li>Determine whether use parameter "sharp" according to the sharpness loss of the main aa process.</li>
+      <br />
+    </ol>
+  </li>
+  <li>Normal anti-aliasing example：<br>
+    <pre>aa = taa.TAAmbk(src, preaa=-1, aatype='Eedi2', mtype='Sobel', mthr=32, sharp=-1, postaa=True, stabilize=1)</pre>
+  </li>
+  <li>Specify additional parameters for certain aatype：<br>
+    <pre>aa = taa.TAAmbk(src, aatype='Nnedi3SangNom', mtype='Prewitt', mthr=45, <strong>nsize=2</strong>, <strong>aa=48</strong>)</pre>
+  </li>
+  <li>Specify additional parameters for certain mtype：<br>
+    <pre>aa = taa.TAAmbk(src, aatype='Eedi2', mtype='Canny', sharp=-1, <strong>t_h=10.0</strong>, <strong>t_l=2.5</strong>)</pre>
+  </li>
+  <li>Setting different mthr for different range of luma. mthr=22 when luma is between 0~40; mthr=56 when luma is between 41~90; mthr=105 when luma is larger than 90:<br>
+    <pre>aa = taa.TAAmbk(src, aatype='Eedi2', mtype='Sobel', <strong>mlthresh=[40, 90]</strong>, <strong>mthr=[22, 56, 105]</strong>)</pre>
+  </li>
+  <li>Use own laplacian mask：<br>
+    <pre>laplacian_kernel = [-1,-1,-1,-1,8,-1,-1,-1,-1]
+laplacian_mask = core.std.Convolution(src, laplacian_kernel, saturate=False)
+aa = taa.TAAmbk(src, aatype='Eedi2', sharp=-1, <strong>mclip=laplacian_mask</strong>)</pre>
+  </li>
+  <li>Use custom aakernel example:<br />
+    <pre>class MyAAKernel(AAParent):
+        def __init__(self, clip, strength, down8=False, **kwargs):
+            super(MyAAKernel, self).__init__(clip, strength, down8)
+            self.aa = kwargs.get('aa', 48)
+            
+        def out():
+            aaed = core.sangnom.SangNom(self.clip, aa=self.aa)
+            return aaed
+    
+aa = taa.TAAmbk(src, <strong>aatype='Custom'</strong>, mtype='Sobel', sharp=-1, <strong>aakernel=MyAAKernel</strong>)</pre>
+  </li>
+</ul>
+<hr>
+<p><strong>Changelog</strong><br /><br />
+<u>2018-05-10 v0.8.0</u>
+<ul>
+  <li>Refactor part of code in FP way</li>
+  <li>Add unittest test case</li>
+  <li>Add Chinese and English doumentation</li>
+  <li>Add negative value mode for aarepair</li>
+  <li>Add the ability to use custom aakernel</li>
+  <li>Add OpenCL device selection ability to daa</li>
+  <li>Add two new mask type: Robert and TEdge</li>
+</ul>
+<u>2018-04-29 v0.7.6</u>
+<ul>
+  <li>Add OpenCL device selection ability to nnedi3cl</li>
+  <li>Fix: incorrect output when aatype=0 and input format is GRAY</li>
+</ul>
+<u>2018-02-26 v0.7.5</u>
+<ul>
+  <li>Add support for nnedi3cl</li>
+  <li>Add support for znedi3</li>
+</ul>
+<u>2017-12-06 v0.7.4</u>
+<ul>
+  <li>Fix: sharpen when sharp=0</li>
+  <li>Fix: broken AAPointSangNom</li>
+</ul>
+<u>2017-09-07 v0.7.3</u>
+<ul>
+  <li>Add support for eedi3m and EEDI3CL</li>
+  <li>Add parameter "opencl" adn "opencl_device" as global opencl switch</li>
+</ul>
+<u>2017-08-11 v0.7.2</u>
+<ul>
+  <li>Add support for TCannyCL</li>
+</ul>
+<u>2017-06-22 v0.7.1</u>
+<ul>
+  <li>Fix: incorrect src format checking</li>
+  <li>Fix: incorrect atrribute name of repair</li>
+</ul>
+<u>2017-05-28 v0.7.0</u>
+<ul>
+  <li>Refactor part of code to follow PEP8 guideline</li>
+  <li>Add parameter "aatypeu" and "aatypev" and the ability to set aatype separately for U, V plane when input is YUV clip</li>
+  <li>Add parameter "txtfade" and FadeTextMask</li>
+  <li>Add support for YUV input whose horizontal chroma subsampling not equal to vertical chroma subsampling</li>
+  <li>Add support for 10bit input</li>
+  <li>Fix: predown won't work</li>
+  <li>Fix: incorrect mask depth conversion</li>
+</ul>
+<u>2017-02-01 v0.6.3</u>
+<ul>
+  <li>Fix: several errors in postaa</li>
+  <li>Fix: several errors when input is yuv422p</li>
+</ul>
+<u>2016-10-22 v0.6.2</u>
+<ul>
+  <li>Imporve: aareszie will use built-in resizer if using VS R33 above to improve speed</li>
+  <li>Fix: several errors of yuv444p input</li>
+</ul>
+<u>2016-10-08 v0.6.1</u>
+<ul>
+  <li>Add new aatype "AAPointEedi2SangNom"</li>
+  <li>Add mclip support for eedi3_092</li>
+  <li>Add new mask type mtype='Prewitt'</li>
+  <li>Fix: several errors in aatype=4</li>
+</ul>
+<u>2016-10-07 v0.6.0</u>
+<ul>
+  <li>Refactor whole TAAmbk and use OOP to manage AA kernel</li>
+</ul>
+<u>2016-02-29 v0.4.1</u>
+<ul>
+  <li>Fix: incompatible with VapourSynth R29</li>
+</ul>
+  <u>2015-12-26 v0.4.0</u>
+<ul>
+  <li>Add new aatype=7 (PointSangNom)</li>
+  <li>Fix: incorrect 16bit expr</li>
+</ul>
+  <u>2015-11-06 v0.3.1</u>
+<ul>
+  <li>Fix: errors in aatype=2 and aatype=-2</li>
+</ul>
+<u>2015-10-24 v0.3.0</u>
+<ul>
+  <li>Update v0.3.0</li>
+</ul>
+<u>2015-10-07 v0.2.0</u>
+<ul>
+  <li>Update v0.2.0</li>
+</ul>
+<u>2015-xx-xx v0.1.0</u>
+<ul>
+  <li>Povsister port TAAmbk from Avisynth to VapourSynth！</li>
+</ul>
+<font face="Verdana, Arial, Helvetica, sans-serif" size="-1"></font>
+</body>
+</html>
