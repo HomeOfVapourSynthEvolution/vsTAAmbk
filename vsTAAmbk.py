@@ -453,7 +453,7 @@ def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_r
     mask = [mask] + [core.std.Maximum] * expand
     mask = functools.reduce(lambda x, y: y(x), mask)
 
-    if fade_num is not 0:
+    if fade_num != 0:
         def shift_backward(n, mask_clip, num):
             return mask_clip[frame_count - 1] if n + num > frame_count - 1 else mask_clip[n + num]
 
