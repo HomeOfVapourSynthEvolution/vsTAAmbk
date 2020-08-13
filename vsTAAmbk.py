@@ -8,7 +8,7 @@ MODULE_NAME = 'vsTAAmbk'
 
 class Clip:
     def __init__(self, clip):
-        self.core = vs.get_core()
+        self.core = vs.core
         self.clip = clip
         if not isinstance(clip, vs.VideoNode):
             raise TypeError(MODULE_NAME + ': clip is invalid.')
@@ -299,7 +299,7 @@ class AAPointSangNom(AAParent):
 
 
 def mask_sobel(mthr, opencl=False, opencl_device=-1, **kwargs):
-    core = vs.get_core()
+    core = vs.core
     if opencl is True:
         try:
             canny = functools.partial(core.tcanny.TCannyCL, device=opencl_device)
@@ -317,7 +317,7 @@ def mask_sobel(mthr, opencl=False, opencl_device=-1, **kwargs):
 
 
 def mask_prewitt(mthr, **kwargs):
-    core = vs.get_core()
+    core = vs.core
 
     def wrapper(clip):
         eemask_1 = core.std.Convolution(clip, [1, 1, 0, 1, 0, -1, 0, -1, -1], divisor=1, saturate=False)
@@ -332,7 +332,7 @@ def mask_prewitt(mthr, **kwargs):
 
 
 def mask_canny_continuous(mthr, opencl=False, opencl_device=-1, **kwargs):
-    core = vs.get_core()
+    core = vs.core
     if opencl is True:
         try:
             canny = functools.partial(core.tcanny.TCannyCL, device=opencl_device)
@@ -351,7 +351,7 @@ def mask_canny_continuous(mthr, opencl=False, opencl_device=-1, **kwargs):
 
 
 def mask_canny_binarized(mthr, opencl=False, opencl_device=-1, **kwargs):
-    core = vs.get_core()
+    core = vs.core
     if opencl is True:
         try:
             canny = functools.partial(core.tcanny.TCannyCL, device=opencl_device)
@@ -371,7 +371,7 @@ def mask_tedge(mthr, **kwargs):
     """
     Mainly based on Avisynth's plugin TEMmod(type=2) (https://github.com/chikuzen/TEMmod)
     """
-    core = vs.get_core()
+    core = vs.core
     mthr /= 5
 
     def wrapper(clip):
@@ -389,7 +389,7 @@ def mask_tedge(mthr, **kwargs):
 
 
 def mask_robert(mthr, **kwargs):
-    core = vs.get_core()
+    core = vs.core
 
     def wrapper(clip):
         m1 = core.std.Convolution(clip, [0, 0, 0, 0, -1, 0, 0, 0, 1], saturate=False)
@@ -401,13 +401,13 @@ def mask_robert(mthr, **kwargs):
 
 
 def mask_msharpen(mthr, **kwargs):
-    core = vs.get_core()
+    core = vs.core
     mthr /= 5
     return lambda clip: core.msmoosh.MSharpen(clip, threshold=mthr, strength=0, mask=True)
 
 
 def mask_lthresh(clip, mthrs, lthreshes, mask_kernel, inexpand, **kwargs):
-    core = vs.get_core()
+    core = vs.core
     gray8 = mvf.Depth(clip, 8) if clip.format.bits_per_sample != 8 else clip
     gray8 = core.std.ShufflePlanes(gray8, 0, vs.GRAY) if clip.format.color_family != vs.GRAY else gray8
     mthrs = mthrs if isinstance(mthrs, (list, tuple)) else [mthrs]
@@ -430,7 +430,7 @@ def mask_lthresh(clip, mthrs, lthreshes, mask_kernel, inexpand, **kwargs):
 
 
 def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_range=None):
-    core = vs.get_core()
+    core = vs.core
     if clip.format.color_family != vs.YUV:
         raise TypeError(MODULE_NAME + ': fadetxt mask: only yuv clips are supported.')
     w = clip.width
@@ -483,7 +483,7 @@ def mask_fadetxt(clip, lthr=225, cthr=(2, 2), expand=2, fade_num=(5, 5), apply_r
 
 
 def daa(clip, mode=-1, opencl=False, opencl_device=-1):
-    core = vs.get_core()
+    core = vs.core
     nnedi3_attr = ((opencl is True and getattr(core, 'nnedi3cl', getattr(core, 'znedi3', getattr(core, 'nnedi3'))))
                    or getattr(core, 'znedi3', getattr(core, 'nnedi3')))
     nnedi3 = (hasattr(nnedi3_attr, 'NNEDI3CL') and nnedi3_attr.NNEDI3CL) or nnedi3_attr.nnedi3
@@ -510,7 +510,7 @@ def daa(clip, mode=-1, opencl=False, opencl_device=-1):
 
 
 def temporal_stabilize(clip, src, delta=3, pel=1, retain=0.6):
-    core = vs.get_core()
+    core = vs.core
     clip_bits = clip.format.bits_per_sample
     src_bits = src.format.bits_per_sample
     if clip_bits != src_bits:
@@ -542,7 +542,7 @@ def temporal_stabilize(clip, src, delta=3, pel=1, retain=0.6):
 
 
 def soothe(clip, src, keep=24):
-    core = vs.get_core()
+    core = vs.core
     clip_bits = clip.format.bits_per_sample
     src_bits = src.format.bits_per_sample
     if clip_bits != src_bits:
@@ -577,7 +577,7 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
            mthr=None, mlthresh=None, mpand=(0, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
            aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=-1,
            **kwargs):
-    core = vs.get_core()
+    core = vs.core
 
     aatypeu = aatype if aatypeu is None else aatypeu
     aatypev = aatype if aatypev is None else aatypev
