@@ -556,7 +556,7 @@ def soothe(clip, src, keep=24):
 
     diff = core.std.MakeDiff(src, clip)
     try:
-        diff_soften = core.misc.AverageFrame(diff, weights=[1, 1, 1], scenechange=32)
+        diff_soften = core.misc.AverageFrames(diff, weights=[1, 1, 1], scenechange=32)
     except AttributeError:
         diff_soften = core.focus.TemporalSoften(diff, radius=1, luma_threshold=255,
                                                 chroma_threshold=255, scenechange=32, mode=2)
