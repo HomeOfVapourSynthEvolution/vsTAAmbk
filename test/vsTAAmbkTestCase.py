@@ -5,7 +5,7 @@ import vsTAAmbk as taa
 
 
 class AATestCase(unittest.TestCase):
-    core = vs.get_core()
+    core = vs.core
     gray8 = core.std.BlankClip(width=1920, height=1080, format=vs.GRAY8, fpsnum=24000, fpsden=1001)
     gray16 = core.std.BlankClip(width=1920, height=1080, format=vs.GRAY16, fpsnum=24000, fpsden=1001)
 
@@ -79,7 +79,7 @@ class AATestCase(unittest.TestCase):
 
 
 class GeneralTestCase(unittest.TestCase):
-    core = vs.get_core()
+    core = vs.core
     gray8 = core.std.BlankClip(width=1920, height=1080, format=vs.GRAY8, fpsnum=24000, fpsden=1001)
     yuv420p8 = core.std.BlankClip(width=1920, height=1080, format=vs.YUV420P8, fpsnum=24000, fpsden=1001)
     yuv444p8 = core.std.BlankClip(width=1920, height=1080, format=vs.YUV444P8, fpsnum=24000, fpsden=1001)
