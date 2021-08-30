@@ -558,7 +558,7 @@ def soothe(clip, src, keep=24):
     try:
         diff_soften = core.misc.AverageFrames(diff, weights=[1, 1, 1], scenechange=32)
     except AttributeError:
-        diff_soften = core.focus.TemporalSoften(diff, radius=1, luma_threshold=255,
+        diff_soften = core.focus2.TemporalSoften2(diff, radius=1, luma_threshold=255,
                                                 chroma_threshold=255, scenechange=32, mode=2)
     diff_soothed_expr = "x {neutral} - y {neutral} - * 0 < x {neutral} - {const} / {kp} * {neutral} + " \
                         "x {neutral} - abs y {neutral} - abs > " \
