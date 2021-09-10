@@ -573,16 +573,27 @@ def soothe(clip, src, keep=24):
     kp = keep * multiple
 
     diff = core.std.MakeDiff(src, clip)
-    try:
-        diff_soften = core.misc.AverageFrames(diff, weights=[1, 1, 1], scenechange=32)
-    except AttributeError:
-        diff_soften = core.focus2.TemporalSoften2(diff, radius=1, luma_threshold=255,
-                                                chroma_threshold=255, scenechange=32, mode=2)
+
+    softener_candidates = [
+        ('std', 'AverageFrames', dict(weights=[1, 1, 1], scenechange=32)),
+        ('misc', 'AverageFrames', dict(weights=[1, 1, 1], scenechange=32)),
+        ('focus2', 'TemporalSoften2', dict(radius=1, luma_threshold=255, chroma_threshold=255, scenechange=32, mode=2))
+    ]
+    softener = None
+    for namespace, func, param in softener_candidates:
+        if hasattr(core, namespace) and hasattr(getattr(core, namespace), func):
+            softener = functools.partial(getattr(getattr(core, namespace), func), **param)
+            break
+    if softener is None:
+        raise RuntimeError(MODULE_NAME + ': no available diff softener. you may need to update your Vapoursynth.')
+
+    diff_soften = softener(diff)
     diff_soothed_expr = "x {neutral} - y {neutral} - * 0 < x {neutral} - {const} / {kp} * {neutral} + " \
                         "x {neutral} - abs y {neutral} - abs > " \
                         "x {kp} * y {const} {kp} - * + {const} / x ? ?".format(neutral=neutral, const=const, kp=kp)
     diff_soothed = core.std.Expr([diff, diff_soften], diff_soothed_expr)
     clip_soothed = core.std.MakeDiff(src, diff_soothed)
+
     return clip_soothed
 
 
