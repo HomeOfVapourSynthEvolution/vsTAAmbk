@@ -16,6 +16,7 @@ VapourSynth R28 or newer
 * [eedi3m (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3)
 * [nnedi3cl (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-NNEDI3CL)
 * [znedi3 (optional)](https://github.com/sekrit-twc/znedi3)
+* [EEDI2CUDA (optional)](https://github.com/AmusementClub/VapourSynth-EEDI2CUDA)
 
 #### Script:
 * [havsfunc](https://github.com/HomeOfVapourSynthEvolution/havsfunc) r22 or newer (and its requirements)
@@ -156,6 +157,20 @@ For more details please visit our threads in NMM-HD Forum.
 
 * *opencl_device*: (Default: 0)<br />
     Select an opencl device.<br />
+
+* *cuda*: (Default: False)<br />
+     Whether use cuda version of some plugins.<br />
+    Currently there are three plugins can use cuda:<br />
+    * EEDI2CUDA
+
+* *cuda_num_streams*: (Default: 1)<br />
+    Specify the number of CUDA streams.<br />
+
+* *cuda_device*: (Default: -1)<br />
+    Select a cuda device.<br />
+
+* *cuda_faster*: (Default: False)<br />
+    Only work for `aatype=1 or Eedi2`, maybe faster when `cuda=True`, refer to [eedi2cuda.AA2](https://github.com/AmusementClub/VapourSynth-EEDI2CUDA#anti-aliasing).<br />
 
 * *other parameters*:<br />
     Will be collected into a dict for particular aatype.<br />

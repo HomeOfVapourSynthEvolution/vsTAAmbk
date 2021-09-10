@@ -208,20 +208,37 @@ class AAEedi3SangNom(AAEedi3):
 class AAEedi2(AAParent):
     def __init__(self, clip, strength=0, down8=False, **args):
         super(AAEedi2, self).__init__(clip, strength, down8)
-        self.mthresh = args.get('mthresh', 10)
-        self.lthresh = args.get('lthresh', 20)
-        self.vthresh = args.get('vthresh', 20)
-        self.maxd = args.get('maxd', 24)
-        self.nt = args.get('nt', 50)
+        self.eedi2_args = {
+            'mthresh': args.get('mthresh', 10),
+            'lthresh': args.get('lthresh', 20),
+            'vthresh': args.get('vthresh', 20),
+            'maxd'   : args.get('maxd',    24),
+            'nt'     : args.get('nt',      50),
+        }
+
+        self.cuda = args.get('cuda', False)
+        self.cuda_faster = args.get('cuda_faster', False)
+        if self.cuda is True:
+            try:
+                if self.cuda_faster:
+                    self.eedi2 = self.core.eedi2cuda.AA2
+                else:
+                    self.eedi2 = self.core.eedi2cuda.EEDI2
+                self.eedi2_args['num_streams'] = args.get('cuda_num_streams', 1)
+                self.eedi2_args['device_id'] = args.get('cuda_device', -1)
+            except AttributeError:
+                self.eedi2 = self.core.eedi2.EEDI2
 
     def out(self):
-        aaed = self.core.eedi2.EEDI2(self.aa_clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd,
-                                     nt=self.nt)
-        aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
-        aaed = self.core.std.Transpose(aaed)
-        aaed = self.core.eedi2.EEDI2(aaed, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
-        aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
-        aaed = self.core.std.Transpose(aaed)
+        if self.cuda_faster:
+            aaed = self.eedi2(self.aa_clip, 1, **self.eedi2_args)
+        else:
+            aaed = self.eedi2(self.aa_clip, 1, **self.eedi2_args)
+            aaed = self.resize(aaed, self.dw, self.clip_height, shift=-0.5)
+            aaed = self.core.std.Transpose(aaed)
+            aaed = self.eedi2(aaed, 1, **self.eedi2_args)
+            aaed = self.resize(aaed, self.clip_height, self.clip_width, shift=-0.5)
+            aaed = self.core.std.Transpose(aaed)
         return self.output(aaed)
 
 
@@ -231,11 +248,10 @@ class AAEedi2SangNom(AAEedi2):
         self.aa = args.get('aa', 48)
 
     def out(self):
-        aaed = self.core.eedi2.EEDI2(self.aa_clip, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd,
-                                     nt=self.nt)
+        aaed = self.eedi2(self.aa_clip, 1, **self.eedi2_args)
         aaed = self.resize(aaed, self.dw, self.uph4, shift=-0.5)
         aaed = self.core.std.Transpose(aaed)
-        aaed = self.core.eedi2.EEDI2(aaed, 1, self.mthresh, self.lthresh, self.vthresh, maxd=self.maxd, nt=self.nt)
+        aaed = self.eedi2(aaed, 1, **self.eedi2_args)
         aaed = self.resize(aaed, self.uph4, self.upw4, shift=-0.5)
         aaed = self.core.sangnom.SangNom(aaed, aa=self.aa)
         aaed = self.core.std.Transpose(aaed)
@@ -575,7 +591,8 @@ def aa_cycle(clip, aa_class, cycle, *args, **kwargs):
 
 def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cycle=0, mtype=None, mclip=None,
            mthr=None, mlthresh=None, mpand=(0, 0), txtmask=0, txtfade=0, thin=0, dark=0.0, sharp=0,
-           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0, opencl=False, opencl_device=-1,
+           aarepair=0, postaa=None, src=None, stabilize=0, down8=True, showmask=0,
+           opencl=False, opencl_device=-1, cuda=False, cuda_num_streams=1, cuda_device=-1, cuda_faster=False,
            **kwargs):
     core = vs.core
 
@@ -628,8 +645,9 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
         yuv = [core.std.ShufflePlanes(edge_enhanced_clip, i, vs.GRAY) for i in range(clip.format.num_planes)]
         aatypes = [aatype, aatypeu, aatypev]
         aa_classes = [aa_kernel.get(aatype, aa_kernel['Unknown']) for aatype in aatypes]
-        aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8, opencl=opencl,
-                             opencl_device=opencl_device, **kwargs) for plane, aa_class in zip(yuv, aa_classes)]
+        aa_clips = [aa_cycle(plane, aa_class, cycle, strength if yuv.index(plane) == 0 else 0, down8,
+                             opencl=opencl, opencl_device=opencl_device, cuda=cuda, cuda_num_streams=cuda_num_streams, cuda_device=cuda_device, cuda_faster=cuda_faster,
+                             **kwargs) for plane, aa_class in zip(yuv, aa_classes)]
         aaed_clip = core.std.ShufflePlanes(aa_clips, [0, 0, 0], vs.YUV)
     elif clip.format.color_family is vs.GRAY:
         gray = edge_enhanced_clip
