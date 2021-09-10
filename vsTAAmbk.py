@@ -212,8 +212,8 @@ class AAEedi2(AAParent):
             'mthresh': args.get('mthresh', 10),
             'lthresh': args.get('lthresh', 20),
             'vthresh': args.get('vthresh', 20),
-            'maxd'   : args.get('maxd',    24),
-            'nt'     : args.get('nt',      50),
+            'maxd': args.get('maxd', 24),
+            'nt': args.get('nt', 50),
         }
 
         self.cuda = args.get('cuda', False)
@@ -228,6 +228,8 @@ class AAEedi2(AAParent):
                 self.eedi2_args['device_id'] = args.get('cuda_device', -1)
             except AttributeError:
                 self.eedi2 = self.core.eedi2.EEDI2
+        else:
+            self.eedi2 = self.core.eedi2.EEDI2
 
     def out(self):
         if self.cuda_faster:
