@@ -326,7 +326,7 @@ def mask_sobel(mthr, opencl=False, opencl_device=-1, **kwargs):
     else:
         canny = core.tcanny.TCanny
     mask_kwargs = {
-        'gmmax': kwargs.get('gmmax', max(round(-0.14 * mthr + 61.87), 80)),
+        'scale': kwargs.get('scale', max(round(-0.14 * mthr + 61.87), 80)),
         'sigma': kwargs.get('sigma', 1.0),
         't_h': kwargs.get('t_h', 8.0),
         't_l': kwargs.get('t_l', 1.0),
