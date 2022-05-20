@@ -326,11 +326,16 @@ def mask_sobel(mthr, opencl=False, opencl_device=-1, **kwargs):
     else:
         canny = core.tcanny.TCanny
     mask_kwargs = {
-        'gmmax': kwargs.get('gmmax', max(round(-0.14 * mthr + 61.87), 80)),
         'sigma': kwargs.get('sigma', 1.0),
         't_h': kwargs.get('t_h', 8.0),
         't_l': kwargs.get('t_l', 1.0),
     }
+
+    if canny.signature.find('gmmax') >= 0:
+        mask_kwargs['gmmax'] = kwargs.get('gmmax', max(1, min(255, mthr)))
+    else:
+        mask_kwargs['scale'] = kwargs.get('scale', 255 / max(1, min(255, mthr)))
+
     return lambda clip: canny(clip, mode=1, op=2, **mask_kwargs)
 
 
