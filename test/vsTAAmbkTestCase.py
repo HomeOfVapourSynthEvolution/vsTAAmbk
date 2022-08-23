@@ -86,14 +86,6 @@ class GeneralTestCase(unittest.TestCase):
     gray16 = core.std.BlankClip(width=1920, height=1080, format=vs.GRAY16, fpsnum=24000, fpsden=1001)
     yuv420p16 = core.std.BlankClip(width=1920, height=1080, format=vs.YUV420P16, fpsnum=24000, fpsden=1001)
     yuv444p16 = core.std.BlankClip(width=1920, height=1080, format=vs.YUV444P16, fpsnum=24000, fpsden=1001)
-    format_id = {
-        '1000010': 'GRAY8',
-        '1000011': 'GRAY16',
-        '3000010': 'YUV420P8',
-        '3000012': 'YUV444P8',
-        '3000022': 'YUV420P16',
-        '3000024': 'YUV444P16',
-    }
 
     def test_default_value(self):
         test_clips = [self.gray8, self.yuv420p8, self.yuv444p8, self.gray16, self.yuv420p16, self.yuv444p16]
@@ -104,7 +96,7 @@ class GeneralTestCase(unittest.TestCase):
             self.assertEqual(aa.height, clip.height)
             self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
             message = 'default value test: {}bit {} format test passed'
-            message = message.format(clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+            message = message.format(clip.format.bits_per_sample, clip.format.name)
             print(message)
 
     def test_aatype(self):
@@ -119,7 +111,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.height, clip.height)
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'aatype {}: {}bit {} format test passed'
-                message = message.format(aatype, clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+                message = message.format(aatype, clip.format.bits_per_sample, clip.format.name)
                 print(message)
         with self.assertRaises(ValueError):
             aa = taa.TAAmbk(test_clips[1], aatype='DoNotExist')
@@ -137,7 +129,7 @@ class GeneralTestCase(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 aa2 = taa.TAAmbk(clip, aatype='Custom', aatypeu=1, aatypev=1)
             message = 'custom aatype: {}bit {} format test passed'
-            message = message.format(clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+            message = message.format(clip.format.bits_per_sample, clip.format.name)
             print(message)
 
     @unittest.skip('aatype sepeated test cost too much time. Run as needed.')
@@ -156,7 +148,7 @@ class GeneralTestCase(unittest.TestCase):
                         self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                         message = 'aatype {}. aatypeu {}, aatypev {}: {}bit {} format test passed'
                         message = message.format(aatype_y, aatype_u, aatype_v, clip.format.bits_per_sample,
-                                                 self.format_id[str(clip.format.id)])
+                                                 clip.format.name)
                         print(message)
 
     def test_preaa(self):
@@ -176,7 +168,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(preaa_without_main_aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'preaa {}: {}bit {} format test passed'
                 message = message.format(str(preaa_type), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
 
     def test_predown(self):
@@ -191,7 +183,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'predown strength {}: {}bit {} format test passed'
                 message = message.format(str(strength), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
 
     def test_cycle(self):
@@ -206,7 +198,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'cycle {}: {}bit {} format test passed'
                 message = message.format(str(cycle), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
 
     def test_mtype(self):
@@ -221,7 +213,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'mtype {}: {}bit {} format test passed'
                 message = message.format(str(mtype), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
         with self.assertRaises(ValueError):
             aa = taa.TAAmbk(test_clips[1], aatype=1, mtype='DoNotExist')
@@ -241,7 +233,7 @@ class GeneralTestCase(unittest.TestCase):
                     self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                     message = 'mtype {} mthr {}: {}bit {} format test passed'
                     message = message.format(str(mtype), str(mthr), clip.format.bits_per_sample,
-                                             self.format_id[str(clip.format.id)])
+                                             clip.format.name)
                     print(message)
 
     def test_mpand(self):
@@ -256,7 +248,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'mpand {}: {}bit {} format test passed'
                 message = message.format(str(mpand), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
 
     def test_txtmask(self):
@@ -273,7 +265,7 @@ class GeneralTestCase(unittest.TestCase):
                     self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                     message = 'txtmask {} txtfade {}: {}bit {} format test passed'
                     message = message.format(str(txtmask), str(txtfade), clip.format.bits_per_sample,
-                                             self.format_id[str(clip.format.id)])
+                                             clip.format.name)
                     print(message)
 
     def test_preprocess(self):
@@ -285,7 +277,7 @@ class GeneralTestCase(unittest.TestCase):
             self.assertEqual(aa.height, clip.height)
             self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
             message = 'thin and dark: {}bit {} format test passed'
-            message = message.format(clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+            message = message.format(clip.format.bits_per_sample, clip.format.name)
             print(message)
 
     def test_aarepair(self):
@@ -299,7 +291,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.height, clip.height)
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'aarepair {}: {}bit {} format test passed'
-                message = message.format(str(repair), clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+                message = message.format(str(repair), clip.format.bits_per_sample, clip.format.name)
                 print(message)
 
     def test_sharp(self):
@@ -313,7 +305,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.height, clip.height)
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'sharp {}: {}bit {} format test passed'
-                message = message.format(str(sharp), clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+                message = message.format(str(sharp), clip.format.bits_per_sample, clip.format.id)
                 print(message)
 
     def test_postaa(self):
@@ -325,7 +317,7 @@ class GeneralTestCase(unittest.TestCase):
             self.assertEqual(aa.height, clip.height)
             self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
             message = 'postaa: {}bit {} format test passed'
-            message = message.format(clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+            message = message.format(clip.format.bits_per_sample, clip.format.name)
             print(message)
 
     def test_stabilize(self):
@@ -340,7 +332,7 @@ class GeneralTestCase(unittest.TestCase):
                 self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                 message = 'stabilize {}: {}bit {} format test passed'
                 message = message.format(str(stabilize), clip.format.bits_per_sample,
-                                         self.format_id[str(clip.format.id)])
+                                         clip.format.name)
                 print(message)
 
     def test_src(self):
@@ -353,7 +345,7 @@ class GeneralTestCase(unittest.TestCase):
             self.assertEqual(aa.height, clip.height)
             self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
             message = 'src clip: {}bit {} format test passed'
-            message = message.format(clip.format.bits_per_sample, self.format_id[str(clip.format.id)])
+            message = message.format(clip.format.bits_per_sample, clip.format.name)
             print(message)
         with self.assertRaises(ValueError):
             aa2 = taa.TAAmbk(self.gray16, aatype=1, mtype=2, src=self.gray8)
@@ -371,7 +363,7 @@ class GeneralTestCase(unittest.TestCase):
                     self.assertEqual(aa.format.bits_per_sample, clip.format.bits_per_sample)
                     message = 'showmask {}: {}bit {} format test passed'
                     message = message.format(str(showmask), clip.format.bits_per_sample,
-                                             self.format_id[str(clip.format.id)])
+                                             clip.format.name)
                     print(message)
 
 

@@ -21,8 +21,6 @@ class Clip:
         self.clip_subsample_w = clip.format.subsampling_w
         self.clip_subsample_h = clip.format.subsampling_h
         self.clip_is_gray = True if clip.format.num_planes == 1 else False
-        # Register format for GRAY10
-        vs.GRAY10 = self.core.register_format(vs.GRAY, vs.INTEGER, 10, 0, 0).id
 
 
 class AAParent(Clip):
