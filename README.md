@@ -16,7 +16,7 @@ VapourSynth R28 or newer
 * [eedi3m (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-EEDI3)
 * [nnedi3cl (optional)](https://github.com/HomeOfVapourSynthEvolution/VapourSynth-NNEDI3CL)
 * [znedi3 (optional)](https://github.com/sekrit-twc/znedi3)
-* [EEDI2CUDA (optional)](https://github.com/AmusementClub/VapourSynth-EEDI2CUDA)
+* [EEDI2CUDA (optional)](https://github.com/ruihe774/VapourSynth-EEDI2CUDA)
 
 #### Script:
 * [havsfunc](https://github.com/HomeOfVapourSynthEvolution/havsfunc) r22 or newer (and its requirements)
@@ -160,7 +160,7 @@ For more details please visit our threads in NMM-HD Forum.
 
 * *cuda*: (Default: False)<br />
      Whether use cuda version of some plugins.<br />
-    Currently there are three plugins can use cuda:<br />
+    Currently there is one plugin can use cuda:<br />
     * EEDI2CUDA
 
 * *cuda_num_streams*: (Default: 1)<br />
