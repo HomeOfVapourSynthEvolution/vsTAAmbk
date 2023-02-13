@@ -1,4 +1,4 @@
-# vsTAAmbk 0.8.1
+# vsTAAmbk
 An Anti-aliasing script ported from Avisynth  
 For more details NMM-HD：https://www.nmm-hd.org/newbbs/viewtopic.php?f=23&t=1666
 
