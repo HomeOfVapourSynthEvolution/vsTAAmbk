@@ -668,7 +668,9 @@ def TAAmbk(clip, aatype=1, aatypeu=None, aatypev=None, preaa=0, strength=0.0, cy
     elif clip.format.color_family is vs.GRAY:
         gray = edge_enhanced_clip
         aa_class = aa_kernel.get(aatype, aa_kernel['Unknown'])
-        aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8, **kwargs)
+        aaed_clip = aa_cycle(gray, aa_class, cycle, strength, down8,
+                             opencl=opencl, opencl_device=opencl_device, cuda=cuda, cuda_num_streams=cuda_num_streams, cuda_device=cuda_device, cuda_faster=cuda_faster,
+                             **kwargs)
     else:
         raise ValueError(MODULE_NAME + ': Unsupported color family.')
 
